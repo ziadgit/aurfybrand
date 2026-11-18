@@ -92,7 +92,7 @@ export default function Showcase() {
           <path d="M40 70a135 135 0 0 1 135 135" />
           <circle cx="40" cy="150" r="5" fill="hsl(var(--primary))" />
         </svg>
-        <span className="absolute -bottom-10 left-1/2 -translate-x-1/2 select-none whitespace-nowrap font-display text-[34vw] leading-none text-foreground/[0.035] sm:text-[22vw]">
+        <span className="absolute -bottom-10 left-1/2 -translate-x-1/2 select-none whitespace-nowrap font-display font-normal text-[34vw] leading-none text-foreground/[0.035] sm:text-[22vw]">
           Aurfy
         </span>
       </div>
@@ -123,7 +123,7 @@ export default function Showcase() {
           <div className="mb-3 flex items-end justify-between gap-4">
             <div>
               <p className="font-mono-label text-primary">Aurfy co-brand deck</p>
-              <h1 className="mt-1 font-display text-[24px] leading-[1.02] tracking-tight text-foreground sm:text-[32px]">
+              <h1 className="mt-1 font-display text-[26px] leading-[1.05] tracking-[-0.01em] text-foreground sm:text-[34px]">
                 Co-brand <span className="italic">studies.</span>
               </h1>
             </div>
@@ -235,7 +235,7 @@ export default function Showcase() {
                   </span>
                 </div>
 
-                <h2 className="mt-3.5 max-w-[16ch] font-display text-[26px] leading-[1.03] tracking-tight sm:text-[32px]">
+                <h2 className="mt-3.5 max-w-[16ch] font-display text-[27px] leading-[1.06] tracking-[-0.01em] sm:text-[33px]">
                   {example.headline}
                 </h2>
                 <p className="mt-1.5 max-w-[34ch] text-[11.5px] leading-snug sm:text-[12px] sm:leading-relaxed" style={{ opacity: 0.82 }}>

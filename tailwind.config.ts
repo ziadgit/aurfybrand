@@ -73,7 +73,7 @@ export default {
       },
       fontFamily: {
         sans: ['"Instrument Sans"', "ui-sans-serif", "system-ui", "-apple-system", "Segoe UI", "sans-serif"],
-        display: ['"Instrument Serif"', "Iowan Old Style", "Georgia", "serif"],
+        display: ['"Bodoni Moda"', "Iowan Old Style", "Georgia", "serif"],
         mono: ['"DM Mono"', "ui-monospace", "SFMono-Regular", "Menlo", "monospace"],
       },
       borderRadius: {

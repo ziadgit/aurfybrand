@@ -22,7 +22,7 @@ export function PageHeader({
             {step && eyebrow ? <span className="text-border">—</span> : null}
             {eyebrow ? <span className="text-muted-foreground">{eyebrow}</span> : null}
           </p>
-          <h1 className="font-display text-[32px] leading-[1.05] tracking-tight text-foreground sm:text-[40px]">{title}</h1>
+          <h1 className="font-display text-[32px] leading-[1.05] tracking-[-0.01em] text-foreground sm:text-[40px]">{title}</h1>
           {description ? (
             <p className="mt-2 max-w-2xl text-[13.5px] leading-relaxed text-muted-foreground sm:text-sm">{description}</p>
           ) : null}

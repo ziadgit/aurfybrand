@@ -95,7 +95,7 @@ export default function Studio() {
             </span>
           </div>
 
-          <h1 className="mt-4 max-w-lg font-display text-[36px] leading-[0.98] tracking-tight sm:text-[52px]">
+          <h1 className="mt-4 max-w-lg font-display text-[36px] leading-[0.98] tracking-[-0.01em] sm:text-[52px]">
             Turn a signal into a <span className="italic text-accent">conversation.</span>
           </h1>
           <p className="mt-3 max-w-xl text-[13.5px] leading-relaxed text-primary-foreground/80 sm:text-[15px]">

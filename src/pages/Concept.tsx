@@ -237,7 +237,7 @@ export default function Concept() {
                 </div>
               </div>
 
-              <h2 className="relative mt-6 font-display text-[32px] leading-[1.02] tracking-tight sm:text-[38px]">
+              <h2 className="relative mt-6 font-display text-[32px] leading-[1.02] tracking-[-0.01em] sm:text-[38px]">
                 {concept.headline || "Your headline lands here"}
               </h2>
               <p className="relative mt-2.5 text-[12.5px] leading-relaxed" style={{ opacity: 0.82 }}>
