@@ -30,6 +30,18 @@ export type PersistenceState = "saved" | "saving" | "error" | "unavailable";
 
 type NewMerchantInput = { name: string; url: string; category: string; notes: string };
 
+type QueueCoBrandInput = {
+  merchantId?: string;
+  name: string;
+  url: string;
+  category: string;
+  notes: string;
+  recordSource: MerchantSource;
+  isDemo: boolean;
+  signalTitle: string;
+  signals: Omit<Signal, "id" | "status" | "addedAt">[];
+};
+
 type SourcedMerchantInput = {
   name: string;
   url: string;
@@ -66,6 +78,8 @@ type StudioContextValue = {
   addMerchant: (input: NewMerchantInput) => Merchant;
   addSourcedMerchant: (input: SourcedMerchantInput) => { merchantId: string; created: boolean; signalCount: number };
   addSignalsToMerchant: (merchantId: string, signals: Omit<Signal, "id" | "status" | "addedAt">[]) => number;
+  queueCoBrand: (input: QueueCoBrandInput) => { merchantId: string; created: boolean; queued: boolean };
+  dequeueCoBrand: (merchantId: string) => void;
   updateMerchant: (patch: Partial<Pick<Merchant, "name" | "url" | "category" | "notes">>) => void;
   deleteMerchant: (id: string) => void;
   setSignalStatus: (signalId: string, status: SignalStatus) => void;
@@ -387,6 +401,151 @@ export function StudioProvider({ children }: { children: ReactNode }) {
     [state],
   );
 
+  const queueCoBrand = useCallback(
+    (input: QueueCoBrandInput) => {
+      const now = new Date().toISOString();
+      const existing = input.merchantId
+        ? state.merchants.find((merchant) => merchant.id === input.merchantId)
+        : state.merchants.find(
+            (merchant) =>
+              (merchant.url && normalizeMerchantUrl(merchant.url) === normalizeMerchantUrl(input.url)) ||
+              merchant.name.trim().toLowerCase() === input.name.trim().toLowerCase(),
+          );
+
+      if (existing) {
+        const targetId = existing.id;
+        const existingSignals = state.signalsByMerchant[targetId] ?? [];
+        const seed = input.signals.find((signal) => signal.title === input.signalTitle);
+        const prepared = existingSignals.map((signal) =>
+          signal.title === input.signalTitle ? { ...signal, status: "selected" as SignalStatus } : signal,
+        );
+        const signalsToUse =
+          seed && !existingSignals.some((signal) => signal.title === input.signalTitle)
+            ? [
+                {
+                  ...seed,
+                  id: `sg_${targetId}_queued_${Date.now().toString(36)}`,
+                  status: "selected" as SignalStatus,
+                  addedAt: now,
+                },
+                ...prepared,
+              ]
+            : prepared;
+
+        setState((current) => {
+          const base = current.pipeline[targetId] ?? defaultPipeline();
+          return touch({
+            ...current,
+            activeMerchantId: targetId,
+            signalsByMerchant: { ...current.signalsByMerchant, [targetId]: signalsToUse },
+            pipeline: {
+              ...current.pipeline,
+              [targetId]: {
+                ...base,
+                queuedAt: now,
+                queuedSignal: input.signalTitle,
+                nextAction: `Co-brand queued from: ${input.signalTitle}`,
+                notes: base.notes,
+                updatedAt: now,
+              },
+            },
+          });
+        });
+        return { merchantId: targetId, created: false, queued: true };
+      }
+
+      const merchantId = `src_${Date.now().toString(36)}`;
+      const merchant: Merchant = {
+        id: merchantId,
+        name: input.name.trim(),
+        url: input.url.trim(),
+        category: input.category.trim(),
+        notes: input.notes.trim(),
+        isDemo: false,
+        recordSource: input.recordSource,
+        createdAt: now,
+      };
+      const signals = input.signals.map((signal, index) => ({
+        ...signal,
+        id: `sg_${merchantId}_${String(index + 1).padStart(2, "0")}`,
+        status: (signal.title === input.signalTitle ? "selected" : "new") as SignalStatus,
+        addedAt: now,
+      }));
+      const pipeline = {
+        ...defaultPipeline(),
+        stage: "research" as StageId,
+        queuedAt: now,
+        queuedSignal: input.signalTitle,
+        nextAction: `Co-brand queued from: ${input.signalTitle}`,
+        notes: input.notes,
+        updatedAt: now,
+      };
+
+      setState((current) => {
+        const already = current.merchants.find(
+          (item) =>
+            (item.url && normalizeMerchantUrl(item.url) === normalizeMerchantUrl(input.url)) ||
+            item.name.trim().toLowerCase() === input.name.trim().toLowerCase(),
+        );
+        if (already) {
+          const base = current.pipeline[already.id] ?? defaultPipeline();
+          const existingSignals = current.signalsByMerchant[already.id] ?? [];
+          const selected = existingSignals.map((signal) =>
+            signal.title === input.signalTitle ? { ...signal, status: "selected" as SignalStatus } : signal,
+          );
+          return touch({
+            ...current,
+            activeMerchantId: already.id,
+            signalsByMerchant: { ...current.signalsByMerchant, [already.id]: selected },
+            pipeline: {
+              ...current.pipeline,
+              [already.id]: {
+                ...base,
+                queuedAt: now,
+                queuedSignal: input.signalTitle,
+                nextAction: `Co-brand queued from: ${input.signalTitle}`,
+                updatedAt: now,
+              },
+            },
+          });
+        }
+        return touch({
+          ...current,
+          merchants: [...current.merchants, merchant],
+          activeMerchantId: merchantId,
+          signalsByMerchant: { ...current.signalsByMerchant, [merchantId]: signals },
+          briefs: { ...current.briefs, [merchantId]: emptyBrief() },
+          positioning: { ...current.positioning, [merchantId]: emptyPositioning() },
+          concepts: { ...current.concepts, [merchantId]: emptyConcept(merchant.name) },
+          outreach: { ...current.outreach, [merchantId]: emptyOutreach() },
+          pipeline: { ...current.pipeline, [merchantId]: pipeline },
+        });
+      });
+
+      return { merchantId, created: true, queued: true };
+    },
+    [state],
+  );
+
+  const dequeueCoBrand = useCallback((merchantId: string) => {
+    setState((current) => {
+      const base = current.pipeline[merchantId];
+      if (!base) return current;
+      return touch({
+        ...current,
+        pipeline: {
+          ...current.pipeline,
+          [merchantId]: {
+            ...base,
+            queuedAt: undefined,
+            queuedSignal: undefined,
+            updatedAt: new Date().toISOString(),
+          },
+        },
+      });
+    });
+  }, []);
+
   const updateMerchant = useCallback((patch: Partial<Pick<Merchant, "name" | "url" | "category" | "notes">>) => {
     setState((current) => {
       const id = current.activeMerchantId;
@@ -687,6 +846,8 @@ export function StudioProvider({ children }: { children: ReactNode }) {
     addMerchant,
     addSourcedMerchant,
     addSignalsToMerchant,
+    queueCoBrand,
+    dequeueCoBrand,
     updateMerchant,
     deleteMerchant,
     setSignalStatus,

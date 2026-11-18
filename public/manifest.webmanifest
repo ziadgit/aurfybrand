@@ -7,8 +7,8 @@
   "scope": "/",
   "display": "standalone",
   "orientation": "portrait-primary",
-  "background_color": "#F8F5EE",
-  "theme_color": "#221A5C",
+  "background_color": "#141126",
+  "theme_color": "#141126",
   "lang": "en",
   "dir": "ltr",
   "categories": [
@@ -45,7 +45,7 @@
     {
       "name": "Co-brand concept deck",
       "short_name": "Deck",
-      "url": "/",
+      "url": "/deck",
       "icons": [
         {
           "src": "/icons/icon-192.png",

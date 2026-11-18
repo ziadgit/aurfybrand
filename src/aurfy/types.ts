@@ -114,6 +114,9 @@ export type PipelineEntry = {
   nextAction: string;
   dueDate: string;
   notes: string;
+  /** Set when a signal is queued from the homepage stream. */
+  queuedAt?: string;
+  queuedSignal?: string;
   history: { stage: StageId; at: string }[];
   updatedAt: string;
 };

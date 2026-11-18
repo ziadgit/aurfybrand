@@ -61,7 +61,7 @@ export default function Studio() {
     <div className="space-y-5 sm:space-y-6">
       <div className="flex items-center justify-between gap-2">
         <Link
-          to="/"
+          to="/deck"
           className="inline-flex min-h-9 items-center gap-1.5 rounded-full border border-border bg-card px-3 text-[11px] font-semibold text-ink-soft transition hover:border-primary/30 hover:text-primary"
         >
           <ArrowLeft className="h-3.5 w-3.5" aria-hidden="true" />

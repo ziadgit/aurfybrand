@@ -121,7 +121,10 @@ export default function Pipeline() {
                   {currentSource.label}
                 </p>
               </div>
-              <StageBadge stage={pipeline.stage} />
+              <div className="flex flex-wrap items-center gap-1.5">
+                {pipeline.queuedAt ? <Pill tone="accent">Queued</Pill> : null}
+                <StageBadge stage={pipeline.stage} />
+              </div>
             </div>
 
             <fieldset className="mt-4">

@@ -45,13 +45,15 @@ export function BrandMark({ className }: { className?: string }) {
   );
 }
 
-export function BrandLockup({ compact = false }: { compact?: boolean }) {
+export function BrandLockup({ compact = false, inverted = false }: { compact?: boolean; inverted?: boolean }) {
   return (
     <span className="flex items-center gap-2.5">
       <BrandMark className={compact ? "h-8 w-8" : "h-9 w-9"} />
       <span className="flex flex-col leading-none">
-        <span className="text-[17px] font-bold tracking-tight text-foreground">Aurfy</span>
-        <span className="font-mono-label mt-1 text-[9px] text-muted-foreground">Signal Studio</span>
+        <span className={cn("text-[17px] font-bold tracking-tight", inverted ? "text-primary-foreground" : "text-foreground")}>Aurfy</span>
+        <span className={cn("font-mono-label mt-1 text-[9px]", inverted ? "text-primary-foreground/60" : "text-muted-foreground")}>
+          Signal Studio
+        </span>
       </span>
     </span>
   );

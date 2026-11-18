@@ -395,8 +395,7 @@ export function AppShell() {
                         Prospects
                       </NavLink>
                       <NavLink
-                        to="/"
-                        end
+                        to="/deck"
                         onClick={() => setMenuOpen(false)}
                         className="flex min-h-12 flex-col items-center justify-center gap-1 rounded-xl border border-border bg-card px-2 text-[10px] font-semibold text-foreground"
                       >
