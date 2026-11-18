@@ -3,7 +3,6 @@ import { Link, useNavigate } from "react-router-dom";
 import {
   ArrowDown,
   ArrowRight,
-  Check,
   ExternalLink,
   ListChecks,
   Menu,
@@ -12,7 +11,6 @@ import {
   Plus,
   Radar,
   ShieldCheck,
-  SlidersHorizontal,
   Sparkles,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -33,18 +31,8 @@ import {
 } from "@/components/ui/dialog";
 import { Pill } from "@/components/aurfy/ui-bits";
 
-type Filter = "all" | "customer" | "peer" | "public" | "clay" | "demo";
 type ViewMode = "stream" | "boards";
 type StreamEntry = { key: string; item: FeedItem; arrivedAt: number; isNewBrand: boolean };
-
-const FILTERS: { id: Filter; label: string; hint: string }[] = [
-  { id: "all", label: "all", hint: "Everything in the universe" },
-  { id: "customer", label: "customer", hint: "What shoppers ask for or struggle with" },
-  { id: "peer", label: "peer", hint: "What comparable brands are doing" },
-  { id: "public", label: "public", hint: "Pages and headlines read from public sites" },
-  { id: "clay", label: "simulated", hint: "Synthetic Clay enrichment" },
-  { id: "demo", label: "demo", hint: "Fictional demo brands" },
-];
 
 const STARS = Array.from({ length: 86 }, (_, index) => ({
   left: ((index * 47) % 997) / 10,
@@ -169,10 +157,8 @@ export default function SignalFeed() {
   const feedRef = useRef<HTMLDivElement>(null);
   const canAutoRef = useRef(false);
   const [mode, setMode] = useState<ViewMode>("boards");
-  const [filter, setFilter] = useState<Filter>("all");
   const [selected, setSelected] = useState<FeedItem | null>(null);
   const [queueOpen, setQueueOpen] = useState(false);
-  const [filterOpen, setFilterOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [playing, setPlaying] = useState(true);
   const [autoScroll, setAutoScroll] = useState(false);
@@ -243,87 +229,6 @@ export default function SignalFeed() {
     }, 45);
     return () => window.clearInterval(timer);
   }, [mode, playing, autoScroll, selected, queueOpen, menuOpen, focusPaused]);
-
-  const applyFilter = (next: Filter) => {
-    setFilter(next);
-    const pool = items.filter((item) => {
-      if (next === "all") return true;
-      if (next === "customer" || next === "peer") return item.signal.category === next;
-      return item.source === next;
-    });
-    setStream({ pool, visible: makeInitial(pool), cursor: Math.min(6, pool.length) });
-    setPendingNew(0);
-    setSelected(null);
-    setQueueOpen(false);
-    feedRef.current?.scrollTo({ top: 0, behavior: "auto" });
-  };
-
-  const boards = useMemo(
-    () =>
-      state.merchants
-        .map((merchant) => {
-          const concept = state.concepts[merchant.id];
-          const positioning = state.positioning[merchant.id];
-          const pipeline = state.pipeline[merchant.id];
-          const signals = state.signalsByMerchant[merchant.id] ?? [];
-          const signal =
-            signals.find((item) => item.id === concept?.signalId) ??
-            signals.find((item) => item.status === "selected") ??
-            signals[0];
-          const capability =
-            positioning?.capabilities.find((item) => item.id === concept?.capabilityId) ??
-            positioning?.capabilities.find((item) => positioning?.capabilityIds.includes(item.id));
-          const angle = ANGLES.find((item) => item.id === positioning?.angle);
-          const hasConcept = Boolean(concept && (concept.headline.trim() || concept.imageUrl));
-          return {
-            merchant,
-            concept,
-            positioning,
-            pipeline,
-            signal,
-            capability,
-            angle,
-            hasConcept,
-            queued: Boolean(pipeline?.queuedAt),
-          };
-        })
-        .filter((board) => board.hasConcept || board.queued)
-        .sort((a, b) => {
-          if (a.queued && !b.queued) return -1;
-          if (b.queued && !a.queued) return 1;
-          return a.merchant.name.localeCompare(b.merchant.name);
-        }),
-    [state],
-  );
-
-  const queuedBoards = boards.filter((board) => board.queued).length;
-
-  const filteredBoards = useMemo(
-    () =>
-      boards.filter((board) => {
-        if (filter === "all") return true;
-        if (filter === "customer" || filter === "peer") return board.signal?.category === filter;
-        if (filter === "public") return board.merchant.recordSource === "public";
-        if (filter === "clay") return board.merchant.recordSource === "clay_simulated";
-        if (filter === "demo") return board.merchant.isDemo;
-        return true;
-      }),
-    [boards, filter],
-  );
-
-  const switchMode = (next: ViewMode) => {
-    setMode(next);
-    setSelected(null);
-    setQueueOpen(false);
-    setAutoScroll(next === "stream" && playing && canAutoRef.current);
-    feedRef.current?.scrollTo({ top: 0, behavior: "auto" });
-  };
-
-  const openBoard = (merchantId: string, hasConcept: boolean) => {
-    setActiveMerchant(merchantId);
-    if (!hasConcept) dequeueCoBrand(merchantId);
-    navigate(hasConcept ? "/concept" : "/signals");
-  };
 
   const merchantFor = (item: FeedItem) => findFeedMerchant(state, item);
   const isQueued = (item: FeedItem) => {
@@ -437,7 +342,7 @@ export default function SignalFeed() {
           >
             co-brands
             <span className={cn("rounded-full px-1 text-[8px]", mode === "boards" ? "bg-accent/20 text-accent" : "text-primary-foreground/30")}>
-              {filteredBoards.length}
+              {boards.length}
             </span>
           </button>
           <button
@@ -453,23 +358,6 @@ export default function SignalFeed() {
           </button>
         </div>
 
-        <button
-          type="button"
-          onClick={() => setFilterOpen(true)}
-          className={cn(
-            "inline-flex min-h-9 items-center gap-1.5 rounded-full border px-2.5 text-[9.5px] font-semibold transition",
-            filter === "all"
-              ? "border-primary-foreground/10 bg-primary-foreground/5 text-primary-foreground/55 hover:text-primary-foreground"
-              : "border-accent/30 bg-accent/10 text-accent",
-          )}
-          aria-label="Filter signals and boards"
-        >
-          <SlidersHorizontal className="h-3.5 w-3.5" aria-hidden="true" />
-          <span className="hidden sm:inline">{filter === "all" ? "filter" : FILTERS.find((item) => item.id === filter)?.label}</span>
-          <span className="sm:hidden">filter</span>
-          {filter !== "all" ? <span className="h-1 w-1 rounded-full bg-accent" aria-hidden="true" /> : null}
-        </button>
-
         {mode === "stream" ? (
           <button
             type="button"
@@ -482,9 +370,6 @@ export default function SignalFeed() {
           </button>
         ) : null}
 
-        <span className="ml-auto hidden items-center gap-1.5 text-[8.5px] uppercase tracking-[0.14em] text-primary-foreground/25 md:flex">
-          {mode === "stream" ? "new surfaces arriving" : "stacked co-brands"}
-        </span>
       </div>
 
       <main
@@ -612,10 +497,10 @@ export default function SignalFeed() {
               <p className="font-display text-2xl text-primary-foreground">Nothing in this orbit yet.</p>
               <button
                 type="button"
-                onClick={() => applyFilter("all")}
+                onClick={() => switchMode("boards")}
                 className="mt-3 inline-flex min-h-10 items-center rounded-full border border-primary-foreground/15 px-4 text-[11px] font-semibold text-primary-foreground/70"
               >
-                Back to all signals
+                Back to co-brand boards
               </button>
             </div>
           ) : null}
@@ -628,7 +513,7 @@ export default function SignalFeed() {
           </div>
         </div>
         ) : (
-          <BoardGallery boards={filteredBoards} onOpen={openBoard} onStream={() => switchMode("stream")} />
+          <BoardGallery boards={boards} onOpen={openBoard} onStream={() => switchMode("stream")} />
         )}
       </main>
 
@@ -658,37 +543,6 @@ export default function SignalFeed() {
           {queued.length}
         </span>
       </button>
-
-      <Dialog open={filterOpen} onOpenChange={setFilterOpen}>
-        <DialogContent className="sm:max-w-sm">
-          <DialogHeader>
-            <DialogTitle>Filter the universe</DialogTitle>
-            <DialogDescription>One filter applies to both the board stack and the stream.</DialogDescription>
-          </DialogHeader>
-          <div className="grid gap-1.5">
-            {FILTERS.map((option) => (
-              <button
-                key={option.id}
-                type="button"
-                onClick={() => {
-                  applyFilter(option.id);
-                  setFilterOpen(false);
-                }}
-                className={cn(
-                  "flex min-h-11 items-center justify-between gap-3 rounded-xl border px-3 py-2 text-left transition",
-                  filter === option.id ? "border-primary/40 bg-primary-soft/50" : "border-border bg-card hover:border-primary/30",
-                )}
-              >
-                <span className="min-w-0">
-                  <span className="block text-[12.5px] font-semibold capitalize text-foreground">{option.label}</span>
-                  <span className="mt-0.5 block text-[10.5px] leading-relaxed text-muted-foreground">{option.hint}</span>
-                </span>
-                {filter === option.id ? <Check className="h-4 w-4 shrink-0 text-primary" aria-label="Selected" /> : null}
-              </button>
-            ))}
-          </div>
-        </DialogContent>
-      </Dialog>
 
       {/* Menu */}
       <Dialog open={menuOpen} onOpenChange={setMenuOpen}>
