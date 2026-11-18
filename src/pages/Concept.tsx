@@ -5,6 +5,7 @@ import {
   Check,
   ChevronDown,
   Copy,
+  Globe,
   ImagePlus,
   Layers,
   Loader2,
@@ -24,6 +25,7 @@ import type { ConceptLayoutId } from "@/aurfy/types";
 import { templateConcept } from "@/aurfy/draft";
 import { useOnline } from "@/aurfy/use-online";
 import { useConceptVisual } from "@/aurfy/use-concept-visual";
+import { fetchLivePage } from "@/aurfy/live-research";
 import { PROVENANCE_DETAIL, PROVENANCE_LABEL, formatDateTime, initials, resizeImageFile } from "@/aurfy/utils";
 import { cn } from "@/lib/utils";
 import { PageHeader } from "@/components/aurfy/page-header";
@@ -80,6 +82,7 @@ export default function Concept() {
   const { merchant, selectedSignals, positioning, concept, pipeline, updateConcept, setStage, updatePipeline, capabilityById } = useStudio();
   const fileRef = useRef<HTMLInputElement>(null);
   const [logoBusy, setLogoBusy] = useState(false);
+  const [logoFetchBusy, setLogoFetchBusy] = useState(false);
   const [imageLoadError, setImageLoadError] = useState(false);
   const online = useOnline();
   const visual = useConceptVisual();
@@ -122,6 +125,26 @@ export default function Concept() {
         .join("\n"),
     [concept, merchant.name, angle, signal, capability],
   );
+
+  const fetchLogoFromSite = async () => {
+    if (!merchant.url) {
+      toast.error("No merchant URL", { description: "Add the merchant's website in intake first." });
+      return;
+    }
+    setLogoFetchBusy(true);
+    const outcome = await fetchLivePage(merchant.url);
+    if (outcome.ok && outcome.data.page.logoUrl) {
+      updateConcept({ logoDataUrl: outcome.data.page.logoUrl });
+      toast.success("Logo pulled from the public site", {
+        description: "Illustrative use only. Remove or replace it if you do not have permission.",
+      });
+    } else {
+      toast.error("No usable logo found", {
+        description: outcome.ok ? "The page did not expose a public logo; upload one instead." : outcome.reason,
+      });
+    }
+    setLogoFetchBusy(false);
+  };
 
   const onLogo = async (file: File | undefined) => {
     if (!file) return;
@@ -425,7 +448,10 @@ export default function Concept() {
                   Logo (optional)
                 </Label>
                 {concept.logoDataUrl?.startsWith("/logos/") ? <Pill tone="warning">Fictional demo mark</Pill> : null}
-                {concept.logoDataUrl && !concept.logoDataUrl.startsWith("/logos/") ? <Pill tone="outline">Uploaded by you</Pill> : null}
+                {concept.logoDataUrl?.startsWith("http") ? <Pill tone="primary">Public site logo</Pill> : null}
+                {concept.logoDataUrl && !concept.logoDataUrl.startsWith("/logos/") && !concept.logoDataUrl.startsWith("http") ? (
+                  <Pill tone="outline">Uploaded by you</Pill>
+                ) : null}
               </div>
               <div className="flex flex-wrap items-center gap-2">
                 <input
@@ -457,10 +483,19 @@ export default function Concept() {
                 ) : null}
                 <span className="text-[10px] text-muted-foreground">PNG/JPG/WebP/SVG · resized locally · not uploaded</span>
               </div>
+              <button
+                type="button"
+                onClick={() => void fetchLogoFromSite()}
+                disabled={logoFetchBusy || !online || !merchant.url}
+                className="tap mt-2 min-h-10 border border-input bg-card px-3 text-[11px] text-foreground hover:bg-secondary disabled:opacity-50"
+              >
+                {logoFetchBusy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Globe className="h-3.5 w-3.5" />}
+                {logoFetchBusy ? "Looking for a public logo…" : "Fetch logo from public site"}
+              </button>
               <p className="mt-2 flex items-start gap-1.5 text-[10.5px] leading-relaxed text-muted-foreground">
                 <ImagePlus className="mt-0.5 h-3 w-3 shrink-0" aria-hidden="true" />
-                Demo marks are fictional. Upload your own logo only if you have permission to use it; this prototype does not fetch brand
-                assets automatically. Send-safe mode hides the logo entirely.
+                Demo marks are fictional. Logos pulled from a public site are used for illustrative discussion only — use them only with
+                permission. Send-safe mode hides the logo entirely.
               </p>
             </div>
           </section>

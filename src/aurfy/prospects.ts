@@ -23,6 +23,7 @@ export type Prospect = {
   source: ProspectSource;
   retrievedAt: string | null;
   sourceUrls: string[];
+  logo: string | null;
   clayFields?: ProspectClayFields;
   signals: ProspectSignalSeed[];
 };
@@ -64,6 +65,7 @@ export const PROSPECTS: Prospect[] = [
     source: "public",
     retrievedAt: PUBLIC_SNAPSHOT_DATE,
     sourceUrls: ["https://www.vervecoffee.com/pages/locations", "https://www.vervecoffee.com/"],
+    logo: "https://www.vervecoffee.com/cdn/shop/files/favicon_33d2d288-2905-49cf-86a5-8525204526bc.png?crop=center&height=200&v=1650427325&width=200",
     signals: [
       {
         category: "customer",
@@ -109,6 +111,7 @@ export const PROSPECTS: Prospect[] = [
     source: "public",
     retrievedAt: PUBLIC_SNAPSHOT_DATE,
     sourceUrls: ["https://www.sightglasscoffee.com/", "https://sightglasscoffee.com/pages/subscriptions"],
+    logo: "https://sightglasscoffee.com/cdn/shop/files/Sightglass-logo-digital-800x800.png?v=1746833002&width=500",
     signals: [
       {
         category: "customer",
@@ -154,6 +157,7 @@ export const PROSPECTS: Prospect[] = [
     source: "public",
     retrievedAt: PUBLIC_SNAPSHOT_DATE,
     sourceUrls: ["https://www.dandelionchocolate.com/"],
+    logo: "https://www.dandelionchocolate.com/cdn/shop/files/D_Favicon.png?crop=center&height=200&v=1738499517&width=200",
     signals: [
       {
         category: "customer",
@@ -197,6 +201,7 @@ export const PROSPECTS: Prospect[] = [
     source: "clay_simulated",
     retrievedAt: null,
     sourceUrls: [],
+    logo: null,
     clayFields: {
       employees: "45 (simulated)",
       locations: "4 cafés (simulated)",
@@ -258,6 +263,7 @@ export const PROSPECTS: Prospect[] = [
     source: "clay_simulated",
     retrievedAt: null,
     sourceUrls: [],
+    logo: null,
     clayFields: {
       employees: "18 (simulated)",
       locations: "2 pop-ups (simulated)",
@@ -306,6 +312,7 @@ export const PROSPECTS: Prospect[] = [
     source: "clay_simulated",
     retrievedAt: null,
     sourceUrls: [],
+    logo: null,
     clayFields: {
       employees: "70 (simulated)",
       locations: "3 cafés (simulated)",

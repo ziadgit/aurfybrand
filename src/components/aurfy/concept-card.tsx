@@ -123,18 +123,24 @@ export function ConceptCard({
   const Logo = ({ size = "md" }: { size?: "sm" | "md" }) => (
     <span
       className={cn(
-        "flex shrink-0 items-center justify-center overflow-hidden rounded-2xl p-1",
+        "relative flex shrink-0 items-center justify-center overflow-hidden rounded-2xl",
         size === "sm" ? "h-9 w-9" : "h-10 w-10",
       )}
       style={{ background: "hsl(45 40% 97%)" }}
     >
+      <span className="text-[12px] font-bold" style={{ color: "hsl(234 30% 15%)" }} aria-hidden="true">
+        {monogram}
+      </span>
       {showLogo ? (
-        <img src={logoUrl ?? ""} alt={`${merchantName} logo`} className="h-full w-full object-contain" />
-      ) : (
-        <span className="text-[12px] font-bold" style={{ color: "hsl(234 30% 15%)" }} aria-hidden="true">
-          {monogram}
-        </span>
-      )}
+        <img
+          src={logoUrl ?? ""}
+          alt={`${merchantName} logo`}
+          className="absolute inset-0 h-full w-full object-contain p-1"
+          onError={(event) => {
+            event.currentTarget.style.display = "none";
+          }}
+        />
+      ) : null}
     </span>
   );
 

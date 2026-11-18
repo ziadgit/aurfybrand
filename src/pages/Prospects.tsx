@@ -14,7 +14,7 @@ import {
 import { toast } from "sonner";
 import { useStudio } from "@/aurfy/store";
 import { PROSPECTS, PUBLIC_SNAPSHOT_DATE, prospectScore, type Prospect, type ProspectSource } from "@/aurfy/prospects";
-import { PROVENANCE_LABEL, formatDate, hostOf } from "@/aurfy/utils";
+import { PROVENANCE_LABEL, formatDate, hostOf, initials } from "@/aurfy/utils";
 import { cn } from "@/lib/utils";
 import { PageHeader } from "@/components/aurfy/page-header";
 import { Button } from "@/components/ui/button";
@@ -101,6 +101,7 @@ export default function Prospects() {
         : "Sourced from a simulated Clay payload. The company, enrichment and signals are synthetic; no real Clay integration or merchant exists.";
 
     const result = addSourcedMerchant({
+      logoUrl: prospect.logo,
       name: prospect.name,
       url: prospect.url,
       category: prospect.category,
@@ -240,7 +241,25 @@ export default function Prospects() {
                 </div>
               </div>
 
-              <h2 className="mt-3 text-[18px] font-semibold leading-tight tracking-tight text-foreground">{prospect.name}</h2>
+              <div className="mt-3 flex items-center gap-2.5">
+                <span
+                  className="relative flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-border bg-card"
+                  aria-hidden="true"
+                >
+                  <span className="text-[10px] font-bold text-ink-soft">{initials(prospect.name)}</span>
+                  {prospect.logo ? (
+                    <img
+                      src={prospect.logo}
+                      alt=""
+                      className="absolute inset-0 h-full w-full object-contain p-1"
+                      onError={(event) => {
+                        event.currentTarget.style.display = "none";
+                      }}
+                    />
+                  ) : null}
+                </span>
+                <h2 className="text-[18px] font-semibold leading-tight tracking-tight text-foreground">{prospect.name}</h2>
+              </div>
               <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-[10.5px] text-muted-foreground">
                 {prospect.source === "public" ? (
                   <a

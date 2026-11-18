@@ -32,6 +32,7 @@ type NewMerchantInput = { name: string; url: string; category: string; notes: st
 
 type QueueCoBrandInput = {
   merchantId?: string;
+  logoUrl?: string | null;
   name: string;
   url: string;
   category: string;
@@ -44,6 +45,7 @@ type QueueCoBrandInput = {
 
 type SourcedMerchantInput = {
   name: string;
+  logoUrl?: string | null;
   url: string;
   category: string;
   notes: string;
@@ -356,7 +358,10 @@ export function StudioProvider({ children }: { children: ReactNode }) {
           signalsByMerchant: { ...current.signalsByMerchant, [merchantId]: signals },
           briefs: { ...current.briefs, [merchantId]: emptyBrief() },
           positioning: { ...current.positioning, [merchantId]: emptyPositioning() },
-          concepts: { ...current.concepts, [merchantId]: emptyConcept(merchant.name) },
+          concepts: {
+            ...current.concepts,
+            [merchantId]: { ...emptyConcept(merchant.name), logoDataUrl: input.logoUrl ?? null },
+          },
           outreach: { ...current.outreach, [merchantId]: emptyOutreach() },
           pipeline: { ...current.pipeline, [merchantId]: pipeline },
         });
@@ -434,9 +439,15 @@ export function StudioProvider({ children }: { children: ReactNode }) {
 
         setState((current) => {
           const base = current.pipeline[targetId] ?? defaultPipeline();
+          const concept = current.concepts[targetId];
+          const concepts =
+            input.logoUrl && concept && !concept.logoDataUrl
+              ? { ...current.concepts, [targetId]: { ...concept, logoDataUrl: input.logoUrl } }
+              : current.concepts;
           return touch({
             ...current,
             activeMerchantId: targetId,
+            concepts,
             signalsByMerchant: { ...current.signalsByMerchant, [targetId]: signalsToUse },
             pipeline: {
               ...current.pipeline,
@@ -516,7 +527,10 @@ export function StudioProvider({ children }: { children: ReactNode }) {
           signalsByMerchant: { ...current.signalsByMerchant, [merchantId]: signals },
           briefs: { ...current.briefs, [merchantId]: emptyBrief() },
           positioning: { ...current.positioning, [merchantId]: emptyPositioning() },
-          concepts: { ...current.concepts, [merchantId]: emptyConcept(merchant.name) },
+          concepts: {
+            ...current.concepts,
+            [merchantId]: { ...emptyConcept(merchant.name), logoDataUrl: input.logoUrl ?? null },
+          },
           outreach: { ...current.outreach, [merchantId]: emptyOutreach() },
           pipeline: { ...current.pipeline, [merchantId]: pipeline },
         });

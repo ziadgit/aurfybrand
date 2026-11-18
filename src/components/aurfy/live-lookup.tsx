@@ -146,6 +146,7 @@ export function LiveLookup() {
     }
 
     const result = addSourcedMerchant({
+      logoUrl: page?.page.logoUrl ?? null,
       name: finalName,
       url: finalUrl,
       category: category.trim() || "Public prospect · live lookup",
@@ -276,7 +277,21 @@ export function LiveLookup() {
                   <ExternalLink className="h-3 w-3" aria-hidden="true" />
                 </a>
               </div>
-              <h3 className="mt-1.5 text-[15px] font-semibold leading-snug text-foreground">{page.page.title}</h3>
+              <div className="mt-1.5 flex items-center gap-2">
+                {page.page.logoUrl ? (
+                  <span className="relative flex h-7 w-7 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-border bg-background">
+                    <img
+                      src={page.page.logoUrl}
+                      alt=""
+                      className="h-full w-full object-contain p-0.5"
+                      onError={(event) => {
+                        event.currentTarget.style.display = "none";
+                      }}
+                    />
+                  </span>
+                ) : null}
+                <h3 className="text-[15px] font-semibold leading-snug text-foreground">{page.page.title}</h3>
+              </div>
               {page.page.description ? <p className="mt-1 text-[11px] leading-relaxed text-muted-foreground">{page.page.description}</p> : null}
               <div className="mt-2 flex flex-wrap gap-1.5">
                 {page.page.channels.slice(0, 5).map((channel) => (

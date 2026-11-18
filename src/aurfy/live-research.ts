@@ -12,6 +12,8 @@ export type LivePage = {
   paymentTerms: string[];
   locationHint: string | null;
   links: { url: string; label: string }[];
+  logoUrl: string | null;
+  logoSource: string | null;
   warnings: string[];
 };
 

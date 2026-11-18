@@ -16,10 +16,11 @@ import {
 import { toast } from "sonner";
 import { useStudio } from "@/aurfy/store";
 import { buildFeed, findFeedMerchant, type FeedItem } from "@/aurfy/feed";
-import { ANGLES, CONCEPT_PALETTES } from "@/aurfy/content";
-import { formatDate, hostOf, merchantSourceMeta } from "@/aurfy/utils";
+import { ANGLES, CONCEPT_PALETTES, STAGES } from "@/aurfy/content";
+import { formatDate, hostOf, initials, merchantSourceMeta, PROVENANCE_LABEL } from "@/aurfy/utils";
 import { cn } from "@/lib/utils";
 import { BrandMark } from "@/components/aurfy/brand";
+import { ConceptCard } from "@/components/aurfy/concept-card";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -31,6 +32,7 @@ import {
 import { Pill } from "@/components/aurfy/ui-bits";
 
 type Filter = "all" | "customer" | "peer" | "public" | "clay" | "demo";
+type ViewMode = "stream" | "boards";
 type StreamEntry = { key: string; item: FeedItem; arrivedAt: number; isNewBrand: boolean };
 
 const FILTERS: { id: Filter; label: string }[] = [
@@ -158,11 +160,183 @@ function Cosmos() {
   );
 }
 
+
+type BoardData = {
+  merchant: import("@/aurfy/types").Merchant;
+  concept?: import("@/aurfy/types").ConceptDraft;
+  pipeline?: import("@/aurfy/types").PipelineEntry;
+  signal?: import("@/aurfy/types").Signal;
+  capability?: import("@/aurfy/types").Capability;
+  angle?: { label: string };
+  hasConcept: boolean;
+  queued: boolean;
+};
+
+function BoardGallery({
+  boards,
+  onOpen,
+  onStream,
+}: {
+  boards: BoardData[];
+  onOpen: (merchantId: string, hasConcept: boolean) => void;
+  onStream: () => void;
+}) {
+  return (
+    <div className="mx-auto w-full max-w-5xl px-4 pb-40 pt-3 sm:px-6">
+      <div className="mb-4 flex items-end justify-between gap-3">
+        <div>
+          <p className="font-mono-label text-[8.5px] text-accent">co-brand boards</p>
+          <p className="mt-1 max-w-lg text-[12px] leading-relaxed text-primary-foreground/50">
+            Concepts already in orbit, plus queued starts. Open a board to keep shaping it.
+          </p>
+        </div>
+        <span className="shrink-0 text-right text-[9px] uppercase tracking-[0.14em] text-primary-foreground/30">
+          {boards.length} board{boards.length === 1 ? "" : "s"}
+        </span>
+      </div>
+
+      {boards.length === 0 ? (
+        <div className="flex flex-col items-center rounded-[28px] border border-primary-foreground/10 bg-cosmos-soft/40 px-5 py-16 text-center">
+          <Sparkles className="h-5 w-5 text-accent" aria-hidden="true" />
+          <p className="mt-3 font-display text-2xl text-primary-foreground">No boards in orbit yet.</p>
+          <p className="mt-1 max-w-sm text-[11px] leading-relaxed text-primary-foreground/45">
+            Queue a signal from the stream, or pull a live company page, to start a co-brand.
+          </p>
+          <div className="mt-4 flex flex-wrap justify-center gap-2">
+            <Button type="button" className="min-h-10" onClick={onStream}>
+              Back to the stream
+            </Button>
+            <Button asChild variant="outline" className="min-h-10 bg-transparent text-primary-foreground">
+              <Link to="/prospects">Pull a live company</Link>
+            </Button>
+          </div>
+        </div>
+      ) : (
+        <div className="grid gap-7 lg:grid-cols-2">
+          {boards.map((board) => {
+            const meta = merchantSourceMeta(board.merchant);
+            const stage = STAGES.find((item) => item.id === (board.pipeline?.stage ?? "research"));
+            const initialsValue = initials(board.merchant.name);
+
+            if (!board.hasConcept || !board.concept) {
+              return (
+                <article
+                  key={board.merchant.id}
+                  className="flex min-h-[340px] flex-col justify-between rounded-[28px] border border-primary-foreground/15 bg-cosmos-soft/50 p-5"
+                >
+                  <div>
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <Pill tone={meta.tone}>{meta.label}</Pill>
+                      <Pill tone="accent">Queued</Pill>
+                    </div>
+                    <div className="mt-4 flex items-center gap-3">
+                      <span
+                        className="relative flex h-11 w-11 items-center justify-center overflow-hidden rounded-2xl ring-1 ring-primary-foreground/15"
+                        style={{ background: "hsl(45 40% 97%)" }}
+                      >
+                        <span className="text-[11px] font-bold" style={{ color: "hsl(234 30% 15%)" }}>
+                          {initialsValue}
+                        </span>
+                        {board.concept?.logoDataUrl ? (
+                          <img
+                            src={board.concept.logoDataUrl}
+                            alt=""
+                            className="absolute inset-0 h-full w-full object-contain p-1"
+                            onError={(event) => {
+                              event.currentTarget.style.display = "none";
+                            }}
+                          />
+                        ) : null}
+                      </span>
+                      <div className="min-w-0">
+                        <p className="truncate text-[15px] font-semibold text-primary-foreground">{board.merchant.name}</p>
+                        <p className="mt-0.5 truncate text-[10px] text-primary-foreground/40">
+                          {board.merchant.category || "Public prospect"}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="mt-5 rounded-xl border border-primary-foreground/10 bg-primary-foreground/5 p-3">
+                      <p className="font-mono-label text-[8px] text-accent">queued from</p>
+                      <p className="mt-1 line-clamp-3 text-[12px] leading-relaxed text-primary-foreground/70">
+                        {board.pipeline?.queuedSignal || "No signal recorded."}
+                      </p>
+                    </div>
+                  </div>
+                  <div>
+                    <p className="mt-6 text-[11px] leading-relaxed text-primary-foreground/45">
+                      The co-brand concept has not been drawn yet. Start with its signals, brief and positioning.
+                    </p>
+                    <Button type="button" className="mt-3 min-h-11 w-full" onClick={() => onOpen(board.merchant.id, false)}>
+                      Start the board
+                      <ArrowRight className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </article>
+              );
+            }
+
+            return (
+              <article key={board.merchant.id} className="flex flex-col">
+                <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    <Pill tone={meta.tone}>{meta.label}</Pill>
+                    <span className="text-[8.5px] uppercase tracking-[0.14em] text-primary-foreground/30">{stage?.label ?? "Research"}</span>
+                    {board.queued ? <Pill tone="accent">Queued</Pill> : null}
+                  </div>
+                  <span className="text-[9px] text-primary-foreground/30">{board.concept.reviewed ? "Reviewed" : "Draft"}</span>
+                </div>
+                <Link to="/concept" onClick={() => onOpen(board.merchant.id, true)} className="group block text-left">
+                  <ConceptCard
+                    merchantName={board.concept.merchantDisplayName || board.merchant.name}
+                    initials={initialsValue}
+                    category={board.merchant.category}
+                    angleLabel={board.angle?.label}
+                    headline={board.concept.headline}
+                    subhead={board.concept.subhead}
+                    capability={board.capability?.label}
+                    signalNote={
+                      board.signal ? `${PROVENANCE_LABEL[board.signal.provenance]}: ${board.signal.title}` : undefined
+                    }
+                    palette={board.concept.palette}
+                    layout={board.concept.layout ?? "editorial"}
+                    fontId={board.concept.displayFont ?? "bodoni"}
+                    imageUrl={board.concept.imageUrl}
+                    imageAlt={`Illustrative co-brand concept for ${board.merchant.name}; no partnership implied.`}
+                    logoUrl={board.concept.logoDataUrl}
+                    redacted={Boolean(board.concept.sendSafe)}
+                    className="shadow-lift"
+                  />
+                  <span className="mt-2 flex items-center justify-between text-[10px] text-primary-foreground/45">
+                    <span>{board.concept.sendSafe ? "Send-safe board" : "Illustrative board"}</span>
+                    <span className="inline-flex items-center gap-1 font-semibold text-accent">
+                      Open board
+                      <ArrowRight className="h-3.5 w-3.5 transition group-hover:translate-x-0.5" aria-hidden="true" />
+                    </span>
+                  </span>
+                </Link>
+              </article>
+            );
+          })}
+        </div>
+      )}
+
+      <div className="mt-10 flex flex-col items-center gap-1.5 border-t border-primary-foreground/10 pt-6 text-center text-[9px] leading-relaxed text-primary-foreground/30">
+        <span className="inline-flex items-center gap-1.5">
+          <ShieldCheck className="h-3 w-3" aria-hidden="true" />
+          Illustrative concepts · fictional or public demo data · no partnership implied
+        </span>
+        <span>Public site logos are used for illustrative discussion only. Send-safe boards hide logos and imagery.</span>
+      </div>
+    </div>
+  );
+}
+
 export default function SignalFeed() {
   const { state, queueCoBrand, dequeueCoBrand, setActiveMerchant } = useStudio();
   const navigate = useNavigate();
   const feedRef = useRef<HTMLDivElement>(null);
   const canAutoRef = useRef(false);
+  const [mode, setMode] = useState<ViewMode>("stream");
   const [filter, setFilter] = useState<Filter>("all");
   const [selected, setSelected] = useState<FeedItem | null>(null);
   const [queueOpen, setQueueOpen] = useState(false);
@@ -205,7 +379,7 @@ export default function SignalFeed() {
   // New surfaces keep arriving from the labeled pool. This is a presentation
   // simulation, not live social listening.
   useEffect(() => {
-    if (!playing || selected || queueOpen || menuOpen) return;
+    if (mode !== "stream" || !playing || selected || queueOpen || menuOpen) return;
     const timer = window.setInterval(() => {
       setStream((current) => {
         if (current.pool.length === 0) return current;
@@ -225,17 +399,17 @@ export default function SignalFeed() {
       setPendingNew((count) => count + 1);
     }, 8000);
     return () => window.clearInterval(timer);
-  }, [playing, selected, queueOpen, menuOpen]);
+  }, [mode, playing, selected, queueOpen, menuOpen]);
 
   useEffect(() => {
-    if (!playing || !autoScroll || selected || queueOpen || menuOpen || focusPaused) return;
+    if (mode !== "stream" || !playing || !autoScroll || selected || queueOpen || menuOpen || focusPaused) return;
     const timer = window.setInterval(() => {
       const element = feedRef.current;
       if (!element) return;
       element.scrollTop += 1;
     }, 45);
     return () => window.clearInterval(timer);
-  }, [playing, autoScroll, selected, queueOpen, menuOpen, focusPaused]);
+  }, [mode, playing, autoScroll, selected, queueOpen, menuOpen, focusPaused]);
 
   const applyFilter = (next: Filter) => {
     setFilter(next);
@@ -251,6 +425,60 @@ export default function SignalFeed() {
     feedRef.current?.scrollTo({ top: 0, behavior: "auto" });
   };
 
+  const boards = useMemo(
+    () =>
+      state.merchants
+        .map((merchant) => {
+          const concept = state.concepts[merchant.id];
+          const positioning = state.positioning[merchant.id];
+          const pipeline = state.pipeline[merchant.id];
+          const signals = state.signalsByMerchant[merchant.id] ?? [];
+          const signal =
+            signals.find((item) => item.id === concept?.signalId) ??
+            signals.find((item) => item.status === "selected") ??
+            signals[0];
+          const capability =
+            positioning?.capabilities.find((item) => item.id === concept?.capabilityId) ??
+            positioning?.capabilities.find((item) => positioning?.capabilityIds.includes(item.id));
+          const angle = ANGLES.find((item) => item.id === positioning?.angle);
+          const hasConcept = Boolean(concept && (concept.headline.trim() || concept.imageUrl));
+          return {
+            merchant,
+            concept,
+            positioning,
+            pipeline,
+            signal,
+            capability,
+            angle,
+            hasConcept,
+            queued: Boolean(pipeline?.queuedAt),
+          };
+        })
+        .filter((board) => board.hasConcept || board.queued)
+        .sort((a, b) => {
+          if (a.queued && !b.queued) return -1;
+          if (b.queued && !a.queued) return 1;
+          return a.merchant.name.localeCompare(b.merchant.name);
+        }),
+    [state],
+  );
+
+  const queuedBoards = boards.filter((board) => board.queued).length;
+
+  const switchMode = (next: ViewMode) => {
+    setMode(next);
+    setSelected(null);
+    setQueueOpen(false);
+    setAutoScroll(next === "stream" && playing && canAutoRef.current);
+    feedRef.current?.scrollTo({ top: 0, behavior: "auto" });
+  };
+
+  const openBoard = (merchantId: string, hasConcept: boolean) => {
+    setActiveMerchant(merchantId);
+    if (!hasConcept) dequeueCoBrand(merchantId);
+    navigate(hasConcept ? "/concept" : "/signals");
+  };
+
   const merchantFor = (item: FeedItem) => findFeedMerchant(state, item);
   const isQueued = (item: FeedItem) => {
     const merchant = merchantFor(item);
@@ -262,6 +490,7 @@ export default function SignalFeed() {
     const prospect = item.prospect;
     const result = queueCoBrand({
       merchantId: item.merchantId,
+      logoUrl: item.prospect?.logo ?? null,
       name: item.brand,
       url: prospect?.url ?? merchant?.url ?? "",
       category: item.category,
@@ -339,19 +568,21 @@ export default function SignalFeed() {
           <span className="animate-pulse h-1.5 w-1.5 rounded-full bg-accent sm:hidden" aria-hidden="true" />
         </Link>
         <span className="ml-1 hidden items-center gap-1.5 rounded-full border border-primary-foreground/10 bg-primary-foreground/5 px-2 py-1 text-[8px] font-medium uppercase tracking-[0.14em] text-primary-foreground/45 sm:inline-flex">
-          <span className="animate-pulse h-1.5 w-1.5 rounded-full bg-accent" />
-          streaming · simulated
+          <span className={cn("h-1.5 w-1.5 rounded-full bg-accent", mode === "stream" && "animate-pulse")} />
+          {mode === "stream" ? "streaming · simulated" : "co-brand boards"}
         </span>
         <div className="ml-auto flex items-center gap-1">
-          <button
-            type="button"
-            onClick={togglePlaying}
-            className="flex h-10 w-10 items-center justify-center rounded-full text-primary-foreground/60 transition hover:bg-primary-foreground/10 hover:text-primary-foreground"
-            aria-label={playing ? "Pause stream" : "Play stream"}
-            title={playing ? "Pause stream" : "Play stream"}
-          >
-            {playing ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
-          </button>
+          {mode === "stream" ? (
+            <button
+              type="button"
+              onClick={togglePlaying}
+              className="flex h-10 w-10 items-center justify-center rounded-full text-primary-foreground/60 transition hover:bg-primary-foreground/10 hover:text-primary-foreground"
+              aria-label={playing ? "Pause stream" : "Play stream"}
+              title={playing ? "Pause stream" : "Play stream"}
+            >
+              {playing ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
+            </button>
+          ) : null}
           <button
             type="button"
             onClick={() => setMenuOpen(true)}
@@ -363,30 +594,65 @@ export default function SignalFeed() {
         </div>
       </header>
 
-      <div className="no-scrollbar relative z-20 flex items-center gap-3 overflow-x-auto px-4 pb-2 sm:px-6" role="group" aria-label="Filter the signal universe">
-        <div className="flex shrink-0 items-center gap-3">
-          {FILTERS.map((option) => {
-            const active = filter === option.id;
-            return (
-              <button
-                key={option.id}
-                type="button"
-                aria-pressed={active}
-                onClick={() => applyFilter(option.id)}
-                className={cn(
-                  "inline-flex min-h-10 shrink-0 items-center gap-1.5 text-[10px] font-medium tracking-[0.02em] transition",
-                  active ? "text-accent" : "text-primary-foreground/45 hover:text-primary-foreground/75",
-                )}
-              >
-                {active ? <span className="h-1 w-1 rounded-full bg-accent" aria-hidden="true" /> : null}
-                {option.label}
-              </button>
-            );
-          })}
+      <div className="relative z-20 flex items-center gap-3 px-4 pb-2 sm:px-6" role="group" aria-label="Homepage view mode and signal filters">
+        <div className="flex shrink-0 rounded-full border border-primary-foreground/10 bg-primary-foreground/5 p-0.5">
+          <button
+            type="button"
+            aria-pressed={mode === "stream"}
+            onClick={() => switchMode("stream")}
+            className={cn(
+              "inline-flex min-h-9 items-center gap-1 rounded-full px-2.5 text-[9.5px] font-semibold capitalize transition",
+              mode === "stream" ? "bg-primary-foreground/10 text-primary-foreground" : "text-primary-foreground/40 hover:text-primary-foreground/70",
+            )}
+          >
+            stream
+          </button>
+          <button
+            type="button"
+            aria-pressed={mode === "boards"}
+            onClick={() => switchMode("boards")}
+            className={cn(
+              "inline-flex min-h-9 items-center gap-1 rounded-full px-2.5 text-[9.5px] font-semibold capitalize transition",
+              mode === "boards" ? "bg-primary-foreground/10 text-primary-foreground" : "text-primary-foreground/40 hover:text-primary-foreground/70",
+            )}
+          >
+            co-brands
+            <span className={cn("rounded-full px-1 text-[8px]", mode === "boards" ? "bg-accent/20 text-accent" : "text-primary-foreground/30")}>
+              {boards.length}
+            </span>
+          </button>
         </div>
+
+        {mode === "stream" ? (
+          <div className="no-scrollbar flex min-w-0 items-center gap-3 overflow-x-auto" role="group" aria-label="Filter the signal universe">
+            {FILTERS.map((option) => {
+              const active = filter === option.id;
+              return (
+                <button
+                  key={option.id}
+                  type="button"
+                  aria-pressed={active}
+                  onClick={() => applyFilter(option.id)}
+                  className={cn(
+                    "inline-flex min-h-10 shrink-0 items-center gap-1.5 text-[10px] font-medium tracking-[0.02em] transition",
+                    active ? "text-accent" : "text-primary-foreground/45 hover:text-primary-foreground/75",
+                  )}
+                >
+                  {active ? <span className="h-1 w-1 rounded-full bg-accent" aria-hidden="true" /> : null}
+                  {option.label}
+                </button>
+              );
+            })}
+          </div>
+        ) : (
+          <span className="min-w-0 truncate text-[8.5px] uppercase tracking-[0.14em] text-primary-foreground/35">
+            {boards.length} board{boards.length === 1 ? "" : "s"} · {queuedBoards} queued
+          </span>
+        )}
+
         <span className="ml-auto hidden shrink-0 items-center gap-1.5 text-[8.5px] uppercase tracking-[0.14em] text-primary-foreground/25 md:flex">
           <Sparkles className="h-3 w-3 text-accent/60" aria-hidden="true" />
-          new surfaces arriving
+          {mode === "stream" ? "new surfaces arriving" : "co-brand universe"}
         </span>
       </div>
 
@@ -403,6 +669,7 @@ export default function SignalFeed() {
           }
         }}
       >
+        {mode === "stream" ? (
         <div className="mx-auto w-full max-w-2xl px-4 pb-40 pt-1 sm:px-6">
           {stream.visible.map((entry) => {
             const item = entry.item;
@@ -419,16 +686,22 @@ export default function SignalFeed() {
               >
                 <div className="flex items-start gap-3">
                   <span
-                    className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full p-0.5 ring-1 ring-primary-foreground/15"
+                    className="relative mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full ring-1 ring-primary-foreground/15"
                     style={{ background: palette.panel }}
                   >
+                    <span className="text-[10px] font-bold" style={{ color: palette.ink }}>
+                      {item.initials}
+                    </span>
                     {item.logoUrl ? (
-                      <img src={item.logoUrl} alt="" className="h-full w-full rounded-full object-contain" />
-                    ) : (
-                      <span className="text-[10px] font-bold" style={{ color: palette.ink }}>
-                        {item.initials}
-                      </span>
-                    )}
+                      <img
+                        src={item.logoUrl}
+                        alt=""
+                        className="absolute inset-0 h-full w-full rounded-full object-contain p-0.5"
+                        onError={(event) => {
+                          event.currentTarget.style.display = "none";
+                        }}
+                      />
+                    ) : null}
                   </span>
 
                   <div className="min-w-0 flex-1">
@@ -523,9 +796,12 @@ export default function SignalFeed() {
             <span>Arrival timing and new-brand surfacing are a demo simulation; sources are labeled.</span>
           </div>
         </div>
+        ) : (
+          <BoardGallery boards={boards} onOpen={openBoard} onStream={() => switchMode("stream")} />
+        )}
       </main>
 
-      {pendingNew > 0 ? (
+      {mode === "stream" && pendingNew > 0 ? (
         <button
           type="button"
           onClick={jumpToNew}
@@ -592,14 +868,20 @@ export default function SignalFeed() {
               <DialogHeader>
                 <div className="flex flex-wrap items-center gap-2">
                   <span
-                    className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-full p-0.5 ring-1 ring-border"
+                    className="relative flex h-9 w-9 items-center justify-center overflow-hidden rounded-full ring-1 ring-border"
                     style={{ background: (CONCEPT_PALETTES.find((p) => p.id === selected.palette) ?? CONCEPT_PALETTES[0]).panel }}
                   >
+                    <span className="text-[10px] font-bold text-primary-foreground">{selected.initials}</span>
                     {selected.logoUrl ? (
-                      <img src={selected.logoUrl} alt="" className="h-full w-full rounded-full object-contain" />
-                    ) : (
-                      <span className="text-[10px] font-bold text-primary-foreground">{selected.initials}</span>
-                    )}
+                      <img
+                        src={selected.logoUrl}
+                        alt=""
+                        className="absolute inset-0 h-full w-full rounded-full object-contain p-0.5"
+                        onError={(event) => {
+                          event.currentTarget.style.display = "none";
+                        }}
+                      />
+                    ) : null}
                   </span>
                   <div>
                     <p className="text-sm font-semibold text-foreground">{selected.brand}</p>

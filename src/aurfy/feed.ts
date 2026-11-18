@@ -80,7 +80,7 @@ function prospectItems(source: "public" | "clay"): FeedItem[] {
         signal,
         palette,
         fontId,
-        logoUrl: null,
+        logoUrl: prospect.logo,
         initials: initials(prospect.name),
         angle: suggestAngle(signal),
         categoryLabel: signal.category === "customer" ? "Customer lens" : "Peer lens",

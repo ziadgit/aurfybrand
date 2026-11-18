@@ -125,6 +125,54 @@ function extractLinks(html: string, baseUrl: string): { url: string; label: stri
   return links;
 }
 
+function extractLogo(
+  html: string,
+  baseUrl: string,
+  meta: Record<string, string>,
+  jsonLd: Record<string, unknown>[],
+): { url: string; source: string } | null {
+  const candidates: { url: string; score: number; source: string }[] = [];
+  const push = (raw: string | undefined, score: number, source: string) => {
+    if (!raw) return;
+    try {
+      const url = new URL(raw, baseUrl);
+      if (!/^https?:$/.test(url.protocol)) return;
+      candidates.push({ url: url.href, score, source });
+    } catch {
+      // Ignore malformed asset URLs.
+    }
+  };
+
+  for (const match of html.matchAll(/<link\b[^>]*>/gi)) {
+    const attrs: Record<string, string> = {};
+    for (const attr of match[0].matchAll(/([a-zA-Z:_-]+)=["']([^"']*)["']/g)) {
+      attrs[attr[1].toLowerCase()] = attr[2];
+    }
+    const rel = attrs.rel || "";
+    if (!/icon/i.test(rel)) continue;
+    const size = Number.parseInt(attrs.sizes || "", 10) || 0;
+    if (/apple-touch-icon/i.test(rel)) {
+      push(attrs.href, 90, "apple-touch-icon");
+    } else {
+      push(attrs.href, size >= 64 ? 80 : 70, size ? `${size}px icon` : "site icon");
+    }
+  }
+
+  for (const entry of jsonLd) {
+    const logo = entry.logo;
+    if (typeof logo === "string") push(logo, 88, "structured-data logo");
+    else if (logo && typeof logo === "object" && typeof (logo as Record<string, unknown>).url === "string") {
+      push((logo as Record<string, string>).url, 88, "structured-data logo");
+    }
+  }
+
+  if (meta["og:logo"]) push(meta["og:logo"], 86, "og:logo");
+  if (meta["og:image"]) push(meta["og:image"], 40, "og:image");
+  push("/favicon.ico", 20, "favicon.ico");
+
+  return candidates.sort((a, b) => b.score - a.score)[0] ?? null;
+}
+
 function firstDate(meta: Record<string, string>, jsonLd: Record<string, unknown>[]): string | null {
   const candidates = [
     meta["article:published_time"],
@@ -209,6 +257,7 @@ Deno.serve(async (req) => {
       .slice(0, 4);
     const jsonLd = extractJsonLd(html);
     const sourceDate = firstDate(meta, jsonLd);
+    const logo = extractLogo(html, finalUrl.href, meta, jsonLd);
     const links = extractLinks(html, finalUrl.href);
 
     const visibleHtml = html
@@ -307,6 +356,8 @@ Deno.serve(async (req) => {
         paymentTerms,
         locationHint: locationMatch?.[0] ?? null,
         links,
+        logoUrl: logo?.url ?? null,
+        logoSource: logo?.source ?? null,
         warnings,
       },
       signals,
