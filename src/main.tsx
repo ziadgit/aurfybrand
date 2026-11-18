@@ -5,6 +5,7 @@ import App from "./App.tsx";
 import { ErrorBoundary } from "react-error-boundary";
 import { ErrorFallback } from "./components/error-boundary/error-fallback";
 import { reportCaughtError } from "./lib/report-caught-error";
+import { registerServiceWorker } from "./pwa";
 import "./index.css";
 
 const container = document.getElementById("root");
@@ -14,6 +15,7 @@ if (!container) {
 }
 
 bootstrapGeneratedSiteAnalytics();
+registerServiceWorker();
 
 createRoot(container, { onCaughtError: reportCaughtError }).render(
   <ErrorBoundary FallbackComponent={ErrorFallback}>

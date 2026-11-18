@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import { RouteErrorBoundary } from "./components/error-boundary/route-error-boundary";
 import { routers } from "./router";
+import { StudioProvider } from "./aurfy/store";
 
 const queryClient = new QueryClient();
 
@@ -20,9 +21,11 @@ const App = () => {
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <RouterProvider router={router} />
+        <StudioProvider>
+          <Toaster />
+          <Sonner />
+          <RouterProvider router={router} />
+        </StudioProvider>
       </TooltipProvider>
     </QueryClientProvider>
   );
