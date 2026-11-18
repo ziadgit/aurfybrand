@@ -9,6 +9,7 @@ import {
   Layers,
   Loader2,
   Palette,
+  RotateCcw,
   ShieldCheck,
   Sparkles,
   Trash2,
@@ -18,21 +19,62 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { useStudio } from "@/aurfy/store";
-import { ANGLES, CONCEPT_PALETTES } from "@/aurfy/content";
+import { ANGLES, CONCEPT_FONTS, CONCEPT_LAYOUTS, CONCEPT_PALETTES } from "@/aurfy/content";
+import type { ConceptLayoutId } from "@/aurfy/types";
 import { templateConcept } from "@/aurfy/draft";
 import { useOnline } from "@/aurfy/use-online";
 import { useConceptVisual } from "@/aurfy/use-concept-visual";
-import { formatDateTime, resizeImageFile } from "@/aurfy/utils";
+import { formatDateTime, initials, resizeImageFile } from "@/aurfy/utils";
 import { cn } from "@/lib/utils";
 import { PageHeader } from "@/components/aurfy/page-header";
-import { BrandMark } from "@/components/aurfy/brand";
+import { ConceptCard, CONCEPT_DISCLAIMER } from "@/components/aurfy/concept-card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { CopyButton, EmptyState, Pill, ReviewToggle, SectionHeading, TruthNote } from "@/components/aurfy/ui-bits";
 
-const FOOTER = "Illustrative concept for discussion. No partnership implied.";
+
+function LayoutMini({ id }: { id: ConceptLayoutId }) {
+  return (
+    <span className="flex h-12 w-full flex-col gap-1 overflow-hidden rounded-lg border border-border bg-card p-1.5" aria-hidden="true">
+      {id === "editorial" ? (
+        <>
+          <span className="h-4 w-full rounded bg-primary/25" />
+          <span className="h-1 w-3/4 rounded bg-muted-foreground/25" />
+          <span className="h-1 w-1/2 rounded bg-muted-foreground/20" />
+        </>
+      ) : null}
+      {id === "cover" ? (
+        <span className="relative h-full w-full rounded bg-primary/25">
+          <span className="absolute inset-x-1 bottom-1 h-1 w-1/2 rounded bg-card/80" />
+        </span>
+      ) : null}
+      {id === "split" ? (
+        <>
+          <span className="h-1 w-2/3 rounded bg-muted-foreground/25" />
+          <span className="h-1 w-1/2 rounded bg-muted-foreground/20" />
+          <span className="mt-auto h-4 w-full rounded bg-primary/25" />
+        </>
+      ) : null}
+      {id === "poster" ? (
+        <>
+          <span className="h-5 w-full rounded bg-primary/25" />
+          <span className="h-2.5 w-4/5 rounded bg-accent" />
+          <span className="h-1 w-1/2 rounded bg-muted-foreground/20" />
+        </>
+      ) : null}
+      {id === "type" ? (
+        <>
+          <span className="h-1 w-1/3 rounded bg-muted-foreground/20" />
+          <span className="mt-1 h-1.5 w-full rounded bg-muted-foreground/30" />
+          <span className="h-1.5 w-4/5 rounded bg-muted-foreground/30" />
+          <span className="mt-auto h-1 w-1/2 rounded bg-primary/30" />
+        </>
+      ) : null}
+    </span>
+  );
+}
 
 export default function Concept() {
   const { merchant, selectedSignals, positioning, concept, pipeline, updateConcept, setStage, updatePipeline, capabilityById } = useStudio();
@@ -45,7 +87,6 @@ export default function Concept() {
   useEffect(() => {
     setImageLoadError(false);
   }, [concept.imageUrl]);
-  const palette = CONCEPT_PALETTES.find((item) => item.id === concept.palette) ?? CONCEPT_PALETTES[0];
   const angle = ANGLES.find((item) => item.id === positioning.angle);
   const signal = selectedSignals.find((item) => item.id === concept.signalId);
   const usableCapabilities = positioning.capabilities.filter((capability) => positioning.capabilityIds.includes(capability.id));
@@ -62,9 +103,20 @@ export default function Concept() {
         `Grounding signal: ${signal?.title ?? "No signal chosen"}`,
         signal ? `Signal provenance: ${signal.provenance === "demo" ? "Fictional demo signal" : "User-supplied, unverified"}` : "",
         `Approved capability: ${capability?.statement ?? "No capability chosen"}`,
-        `Visual: ${concept.imageUrl ? "AI-generated illustrative artwork (not a logo or partnership asset)" : "No generated visual"}`,
+        `Art direction: ${CONCEPT_LAYOUTS.find((item) => item.id === (concept.layout ?? "editorial"))?.label ?? "Editorial"} · ${
+          CONCEPT_FONTS.find((item) => item.id === (concept.displayFont ?? "bodoni"))?.label ?? "Bodoni Moda"
+        }`,
+        `Visual: ${
+          concept.sendSafe
+            ? "Redacted for send — merchant logo and generated imagery omitted"
+            : concept.imageUrl
+              ? "AI-generated illustrative artwork (not a logo or partnership asset)"
+              : "No generated visual"
+        }`,
+        concept.logoDataUrl && !concept.sendSafe ? `Logo: ${concept.logoDataUrl.startsWith("/logos/") ? "fictional demo mark" : "provided by you"}` : "",
+        concept.sendSafe ? "Send-safe version: logos and illustrations removed. Written concept only." : "",
         "",
-        FOOTER,
+        CONCEPT_DISCLAIMER,
       ]
         .filter(Boolean)
         .join("\n"),
@@ -163,128 +215,37 @@ export default function Concept() {
       <div className="grid gap-5 lg:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)] lg:items-start">
         {/* Preview */}
         <div className="lg:sticky lg:top-20">
-          <div className="mx-auto w-full max-w-md">
-            <div
-              className="aurfy-grain relative overflow-hidden rounded-[30px] border border-border/60 p-5 shadow-lift sm:p-6"
-              style={{ background: palette.panel, color: palette.ink }}
-              aria-label="Illustrative co-branded concept preview"
-            >
-              {concept.imageUrl && !imageLoadError ? (
-                <div className="relative -mx-5 -mt-5 mb-4 sm:-mx-6 sm:-mt-6">
-                  <div className="relative aspect-[4/3] w-full overflow-hidden">
-                    <img
-                      src={concept.imageUrl}
-                      alt={`AI-generated illustrative concept artwork for ${concept.merchantDisplayName || merchant.name}; not a real partnership.`}
-                      className="h-full w-full object-cover"
-                      loading="lazy"
-                      decoding="async"
-                      onError={() => setImageLoadError(true)}
-                    />
-                    <div
-                      className="absolute inset-0"
-                      style={{ background: "linear-gradient(180deg, rgba(9,9,18,0.34) 0%, rgba(9,9,18,0) 38%, rgba(9,9,18,0.5) 100%)" }}
-                      aria-hidden="true"
-                    />
-                    <span className="aurfy-chip absolute left-3 top-3 border-0 bg-background/90 text-[9px] text-foreground backdrop-blur">
-                      AI visual · illustrative
-                    </span>
-                    <span className="absolute bottom-3 left-3 rounded-full bg-background/90 px-2.5 py-1 text-[8.5px] font-medium text-foreground backdrop-blur">
-                      No partnership implied
-                    </span>
-                  </div>
-                </div>
-              ) : null}
-
-              {!concept.imageUrl || imageLoadError ? (
-              <svg className="pointer-events-none absolute -right-10 -top-10 h-44 w-44 opacity-20" viewBox="0 0 200 200" aria-hidden="true">
-                <g fill="none" stroke={palette.accent} strokeWidth="5" strokeLinecap="round">
-                  <path d="M30 150a60 60 0 0 1 60-60" />
-                  <path d="M30 110a100 100 0 0 1 100 100" />
-                  <path d="M30 70a140 140 0 0 1 140 140" />
-                </g>
-              </svg>
-              ) : null}
-
-              <div className="relative flex items-start justify-between gap-3">
-                <span className="font-mono-label rounded-full px-2.5 py-1 text-[8.5px]" style={{ background: palette.accent, color: "hsl(234 30% 13%)" }}>
-                  Illustrative concept
-                </span>
-                <span className="font-mono-label text-[8.5px]" style={{ color: palette.ink, opacity: 0.6 }}>
-                  Not a partnership
-                </span>
-              </div>
-
-              <div className="relative mt-6 flex items-center gap-2.5">
-                {concept.logoDataUrl ? (
-                  <span className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-2xl p-1" style={{ background: "hsl(45 40% 97%)" }}>
-                    <img src={concept.logoDataUrl} alt={`${merchant.name} uploaded logo`} className="h-full w-full object-contain" />
-                  </span>
-                ) : (
-                  <span
-                    className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl text-[13px] font-bold"
-                    style={{ background: "hsl(45 40% 97%)", color: "hsl(234 30% 15%)" }}
-                  >
-                    {(concept.merchantDisplayName || merchant.name).slice(0, 2).toUpperCase()}
-                  </span>
-                )}
-                <div className="min-w-0 leading-tight">
-                  <p className="truncate text-[13px] font-semibold">{concept.merchantDisplayName || merchant.name}</p>
-                  <p className="flex items-center gap-1 text-[10px]" style={{ opacity: 0.62 }}>
-                    <span>×</span>
-                    <BrandMark className="h-3.5 w-3.5" />
-                    Aurfy
-                  </p>
-                </div>
-              </div>
-
-              <h2 className="relative mt-6 font-display text-[32px] leading-[1.02] tracking-[-0.01em] sm:text-[38px]">
-                {concept.headline || "Your headline lands here"}
-              </h2>
-              <p className="relative mt-2.5 text-[12.5px] leading-relaxed" style={{ opacity: 0.82 }}>
-                {concept.subhead || "A short line connecting the merchant's observed moment to a grounded Aurfy capability."}
-              </p>
-
-              <div className="relative mt-5 rounded-2xl border p-3" style={{ borderColor: "rgba(255,255,255,0.18)", background: "rgba(255,255,255,0.06)" }}>
-                <p className="font-mono-label text-[8px] tracking-[0.14em]" style={{ opacity: 0.6 }}>
-                  Approved Aurfy capability
-                </p>
-                <p className="mt-1 flex items-start gap-1.5 text-[11.5px] leading-relaxed">
-                  <Check className="mt-0.5 h-3.5 w-3.5 shrink-0" style={{ color: palette.accent }} aria-hidden="true" />
-                  {capability?.statement ?? "No capability selected yet."}
-                </p>
-              </div>
-
-              <div
-                className="relative mt-3 rounded-xl border px-3 py-2"
-                style={{ borderColor: "rgba(255,255,255,0.14)", background: "rgba(255,255,255,0.05)" }}
-              >
-                <div className="flex flex-wrap items-center gap-1.5">
-                  <span className="font-mono-label text-[7.5px] tracking-[0.14em]" style={{ opacity: 0.55 }}>
-                    Signal behind the idea
-                  </span>
-                  {angle ? (
-                    <span className="rounded-full px-1.5 py-0.5 text-[8px] font-medium" style={{ background: "rgba(255,255,255,0.1)" }}>
-                      {angle.label}
-                    </span>
-                  ) : null}
-                </div>
-                <p className="mt-1 line-clamp-2 text-[10.5px] leading-snug" style={{ opacity: 0.85 }}>
-                  {signal ? signal.title : "No grounding signal selected."}
-                </p>
-                <p className="mt-1 text-[8.5px]" style={{ opacity: 0.5 }}>
-                  {signal?.provenance === "demo" ? "Fictional demo signal — not verified" : signal ? "User-supplied — not independently verified" : "Not evidence"}
-                </p>
-              </div>
-
-              <div className="relative mt-4 border-t pt-3" style={{ borderColor: "rgba(255,255,255,0.16)" }}>
-                <p className="text-[9px] leading-relaxed" style={{ opacity: 0.62 }}>
-                  {FOOTER}
-                </p>
-              </div>
-            </div>
+          <div className="mx-auto w-full max-w-md" role="region" aria-label="Illustrative co-branded concept preview">
+            <ConceptCard
+              merchantName={concept.merchantDisplayName || merchant.name}
+              initials={initials(concept.merchantDisplayName || merchant.name)}
+              category={merchant.category}
+              angleLabel={angle?.label}
+              headline={concept.headline}
+              subhead={concept.subhead}
+              capability={capability?.label}
+              signalNote={
+                signal
+                  ? `${signal.provenance === "demo" ? "Fictional demo signal" : "User-supplied"}: ${signal.title}`
+                  : undefined
+              }
+              palette={concept.palette}
+              layout={concept.layout ?? "editorial"}
+              fontId={concept.displayFont ?? "bodoni"}
+              imageUrl={concept.imageUrl}
+              imageAlt={`AI-generated illustrative concept artwork for ${concept.merchantDisplayName || merchant.name}; not a real partnership.`}
+              logoUrl={concept.logoDataUrl}
+              redacted={Boolean(concept.sendSafe)}
+              onImageError={() => setImageLoadError(true)}
+              className="shadow-lift"
+            />
 
             <div className="mt-3 flex flex-wrap items-center justify-between gap-2 text-[10px] text-muted-foreground">
-              <span>Preview updates as you edit. Nothing is published.</span>
+              <span>
+                {concept.sendSafe
+                  ? "Send-safe preview: logo, imagery and illustrations removed."
+                  : "Preview updates as you edit. Nothing is published."}
+              </span>
               <CopyButton text={conceptText} label="Copy concept" variant="outline" className="min-h-9 w-auto px-3 text-[11px]" />
             </div>
           </div>
@@ -326,6 +287,10 @@ export default function Concept() {
                   maxLength={64}
                   onChange={(event) => updateConcept({ headline: event.target.value })}
                   className="aurfy-input mt-2 font-display text-lg"
+                  style={{
+                    fontFamily: (CONCEPT_FONTS.find((font) => font.id === (concept.displayFont ?? "bodoni")) ?? CONCEPT_FONTS[0]).stack,
+                    fontWeight: (CONCEPT_FONTS.find((font) => font.id === (concept.displayFont ?? "bodoni")) ?? CONCEPT_FONTS[0]).weight,
+                  }}
                   placeholder="One payment layer. Every counter."
                 />
               </div>
@@ -455,9 +420,13 @@ export default function Concept() {
             </fieldset>
 
             <div className="mt-4">
-              <Label htmlFor="concept-logo" className="field-label">
-                Logo (optional)
-              </Label>
+              <div className="flex flex-wrap items-center gap-2">
+                <Label htmlFor="concept-logo" className="field-label mb-0">
+                  Logo (optional)
+                </Label>
+                {concept.logoDataUrl?.startsWith("/logos/") ? <Pill tone="warning">Fictional demo mark</Pill> : null}
+                {concept.logoDataUrl && !concept.logoDataUrl.startsWith("/logos/") ? <Pill tone="outline">Uploaded by you</Pill> : null}
+              </div>
               <div className="flex flex-wrap items-center gap-2">
                 <input
                   ref={fileRef}
@@ -490,9 +459,72 @@ export default function Concept() {
               </div>
               <p className="mt-2 flex items-start gap-1.5 text-[10.5px] leading-relaxed text-muted-foreground">
                 <ImagePlus className="mt-0.5 h-3 w-3 shrink-0" aria-hidden="true" />
-                Only upload a logo you are allowed to use. The prototype does not fetch brand assets automatically.
+                Demo marks are fictional. Upload your own logo only if you have permission to use it; this prototype does not fetch brand
+                assets automatically. Send-safe mode hides the logo entirely.
               </p>
             </div>
+          </section>
+
+          <section className="surface p-4 sm:p-5">
+            <SectionHeading
+              eyebrow="Art direction"
+              title="A layout and typeface per concept"
+              description="Five layouts and four display faces. Each merchant can carry its own art direction; changing either clears the review flag."
+            />
+
+            <fieldset className="mt-4">
+              <legend className="field-label">Layout</legend>
+              <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+                {CONCEPT_LAYOUTS.map((item) => {
+                  const active = (concept.layout ?? "editorial") === item.id;
+                  return (
+                    <button
+                      key={item.id}
+                      type="button"
+                      aria-pressed={active}
+                      aria-label={`Use ${item.label} layout`}
+                      onClick={() => updateConcept({ layout: item.id })}
+                      className={cn(
+                        "rounded-xl border p-2 text-left transition",
+                        active ? "border-primary/50 bg-primary-soft/40 ring-1 ring-primary/20" : "border-border bg-card hover:border-primary/30",
+                      )}
+                    >
+                      <LayoutMini id={item.id} />
+                      <span className="mt-1.5 block text-[11px] font-semibold text-foreground">{item.label}</span>
+                      <span className="mt-0.5 block text-[9.5px] leading-snug text-muted-foreground">{item.note}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </fieldset>
+
+            <fieldset className="mt-4">
+              <legend className="field-label">Typeface</legend>
+              <div className="grid grid-cols-2 gap-2">
+                {CONCEPT_FONTS.map((font) => {
+                  const active = (concept.displayFont ?? "bodoni") === font.id;
+                  return (
+                    <button
+                      key={font.id}
+                      type="button"
+                      aria-pressed={active}
+                      aria-label={`Use ${font.label} typeface`}
+                      onClick={() => updateConcept({ displayFont: font.id })}
+                      className={cn(
+                        "min-h-[74px] rounded-xl border p-2.5 text-left transition",
+                        active ? "border-primary/50 bg-primary-soft/40 ring-1 ring-primary/20" : "border-border bg-card hover:border-primary/30",
+                      )}
+                    >
+                      <span className="block text-[26px] leading-none text-foreground" style={{ fontFamily: font.stack, fontWeight: font.weight }}>
+                        Aa
+                      </span>
+                      <span className="mt-1.5 block text-[11px] font-semibold text-foreground">{font.label}</span>
+                      <span className="mt-0.5 block text-[9.5px] leading-snug text-muted-foreground">{font.note}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </fieldset>
           </section>
 
           <section className="surface p-4 sm:p-5">
@@ -616,6 +648,46 @@ export default function Concept() {
           </section>
 
           <section className="surface p-4 sm:p-5">
+            <SectionHeading
+              eyebrow="Convert for send"
+              title="Redact for external sharing"
+              description="If merchant logos or generated imagery should not leave the studio, switch to a text-only send-safe version."
+            />
+
+            <div className="mt-3 flex flex-wrap items-center gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                className="tap min-h-11"
+                onClick={() => {
+                  updateConcept({ sendSafe: !concept.sendSafe });
+                  toast.success(concept.sendSafe ? "Full concept restored" : "Converted to send-safe preview", {
+                    description: concept.sendSafe
+                      ? "The logo, visual and illustrations are visible again. Review the concept again."
+                      : "The preview now omits the merchant logo, generated visual and illustration. The written concept and disclaimer remain.",
+                  });
+                }}
+              >
+                {concept.sendSafe ? <RotateCcw className="h-4 w-4" /> : <ShieldCheck className="h-4 w-4" />}
+                {concept.sendSafe ? "Restore full concept" : "Redact logos & imagery"}
+              </Button>
+              <Pill tone={concept.sendSafe ? "success" : "neutral"}>{concept.sendSafe ? "Send-safe" : "Full preview"}</Pill>
+            </div>
+
+            <p className="mt-2 text-[11px] leading-relaxed text-muted-foreground">
+              Send-safe removes the merchant logo, the AI-generated visual, the payment-journey illustration and the decorative category
+              mark. It keeps the headline, approved capability, signal note and the exact footer disclaimer. The original assets stay stored
+              so you can restore this preview.
+            </p>
+            {concept.sendSafe ? (
+              <p className="mt-2 rounded-xl border border-success/25 bg-success-soft/50 p-2.5 text-[10.5px] leading-relaxed text-success">
+                Send-safe preview is active and uses the type-led layout regardless of the selected layout. Use “Copy concept” under the
+                preview to share the text-only version; nothing is sent automatically.
+              </p>
+            ) : null}
+          </section>
+
+          <section className="surface p-4 sm:p-5">
             <SectionHeading eyebrow="Review & next action" title="A human decides" description="The concept stays a draft until someone confirms the wording and framing." />
             <div className="mt-4 space-y-3">
               <ReviewToggle
@@ -625,7 +697,7 @@ export default function Concept() {
                   if (value) toast.success("Concept marked reviewed", { description: "You can still edit; further edits clear the review flag." });
                 }}
                 title="I reviewed this illustrative concept"
-                description="The footer is intact, any generated visual is labeled illustrative, signal provenance is visible, and no partnership or unapproved feature is implied."
+                description="The footer is intact, the layout and typeface are intentional, any generated visual is labeled illustrative, signal provenance is visible, and no partnership is implied."
               />
 
               {!concept.reviewed || !concept.signalId || !concept.capabilityId ? (
@@ -673,7 +745,7 @@ export default function Concept() {
           <div className="flex items-center justify-between gap-2 rounded-2xl border border-dashed border-border bg-card/60 p-3 text-[10.5px] text-muted-foreground">
             <span className="flex items-center gap-1.5">
               <Copy className="h-3.5 w-3.5" aria-hidden="true" />
-              Footer text is fixed: “{FOOTER}”
+              Footer text is fixed: “{CONCEPT_DISCLAIMER}”
             </span>
             <Link to="/outreach" className="hidden shrink-0 items-center gap-1 font-semibold text-primary sm:inline-flex">
               Outreach
@@ -686,7 +758,7 @@ export default function Concept() {
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <p className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
           <Palette className="h-3.5 w-3.5" aria-hidden="true" />
-          The palette is presentation only. The angle and approved capability are set in positioning.
+          Palette, layout and typeface are presentation only. The angle and approved capability are set in positioning.
         </p>
         <Button asChild className="tap min-h-11">
           <Link to="/outreach">
@@ -698,7 +770,8 @@ export default function Concept() {
 
       <p className="flex items-start gap-1.5 text-[10.5px] leading-relaxed text-muted-foreground">
         <Sparkles className="mt-0.5 h-3 w-3 shrink-0" aria-hidden="true" />
-        Template copy is deterministic. The optional visual is AI-generated with Seedream 5 and labeled; no merchant logo or official brand asset is synthesized.
+        Template copy is deterministic. Five layouts and four typefaces are stored per concept; visuals are labeled, and send-safe mode
+        removes logos and imagery. No merchant logo or official brand asset is synthesized.
       </p>
     </div>
   );

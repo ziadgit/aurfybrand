@@ -122,13 +122,28 @@ function backfillDemoExamples(stored: WorkspaceState): WorkspaceState {
       const untouched = existingSignals.every((signal) => signal.status === "new");
       if (untouched) signalsByMerchant[id] = seeded.signalsByMerchant[id] ?? existingSignals;
       changed = true;
+      continue;
     }
 
-    // The old seed predates optional concept imagery. Add it only when the
-    // field was never present; an explicit null (user removed it) is preserved.
-    if (id === "marlow-fen" && concept && concept.imageUrl === undefined && concept.headline === seededConcept.headline) {
-      concepts[id] = { ...concept, imageUrl: seededConcept.imageUrl };
-      changed = true;
+    if (concept) {
+      const artPatch: Partial<typeof concept> = {};
+      if (concept.layout === undefined) artPatch.layout = seededConcept.layout;
+      if (concept.displayFont === undefined) artPatch.displayFont = seededConcept.displayFont;
+      if (
+        seededConcept.logoDataUrl &&
+        (concept.logoDataUrl === undefined || (concept.logoDataUrl === null && concept.reviewed))
+      ) {
+        artPatch.logoDataUrl = seededConcept.logoDataUrl;
+      }
+      // The old seed predates optional concept imagery. Add it only when the
+      // field was never present; an explicit null (user removed it) is preserved.
+      if (id === "marlow-fen" && concept.imageUrl === undefined && concept.headline === seededConcept.headline) {
+        artPatch.imageUrl = seededConcept.imageUrl;
+      }
+      if (Object.keys(artPatch).length > 0) {
+        concepts[id] = { ...concept, ...artPatch };
+        changed = true;
+      }
     }
   }
 

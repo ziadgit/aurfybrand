@@ -1,4 +1,4 @@
-import type { AngleId, Capability, ConceptPaletteId, StageId } from "./types";
+import type { AngleId, Capability, ConceptFontId, ConceptLayoutId, ConceptPaletteId, StageId } from "./types";
 
 export const ANGLES: {
   id: AngleId;
@@ -116,6 +116,55 @@ export const CONCEPT_PALETTES: {
     ink: "hsl(180 40% 97%)",
     accent: "hsl(76 78% 62%)",
     tint: "hsl(176 40% 93%)",
+  },
+];
+
+export const CONCEPT_LAYOUTS: {
+  id: ConceptLayoutId;
+  label: string;
+  note: string;
+}[] = [
+  { id: "editorial", label: "Editorial", note: "Image above, story below" },
+  { id: "cover", label: "Cover", note: "Full-bleed image, overlaid copy" },
+  { id: "split", label: "Split", note: "Copy first, image after" },
+  { id: "poster", label: "Poster", note: "Accent headline block over image" },
+  { id: "type", label: "Type-led", note: "No photo; type, pattern and journey" },
+];
+
+export const CONCEPT_FONTS: {
+  id: ConceptFontId;
+  label: string;
+  stack: string;
+  weight: number;
+  note: string;
+}[] = [
+  {
+    id: "bodoni",
+    label: "Bodoni Moda",
+    stack: '"Bodoni Moda", "Iowan Old Style", Georgia, serif',
+    weight: 600,
+    note: "High-contrast editorial",
+  },
+  {
+    id: "playfair",
+    label: "Playfair Display",
+    stack: '"Playfair Display", Georgia, serif',
+    weight: 600,
+    note: "Classic luxury",
+  },
+  {
+    id: "fraunces",
+    label: "Fraunces",
+    stack: '"Fraunces", "Iowan Old Style", Georgia, serif',
+    weight: 600,
+    note: "Warm and contemporary",
+  },
+  {
+    id: "dmserif",
+    label: "DM Serif Display",
+    stack: '"DM Serif Display", Georgia, serif',
+    weight: 400,
+    note: "Sturdy modern display",
   },
 ];
 

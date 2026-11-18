@@ -66,6 +66,8 @@ export type Positioning = {
 };
 
 export type ConceptPaletteId = "indigo" | "citron" | "clay" | "teal";
+export type ConceptLayoutId = "editorial" | "cover" | "split" | "poster" | "type";
+export type ConceptFontId = "bodoni" | "playfair" | "fraunces" | "dmserif";
 
 export type ConceptDraft = {
   headline: string;
@@ -79,6 +81,11 @@ export type ConceptDraft = {
   imageUrl?: string | null;
   imagePrompt?: string | null;
   imageGeneratedAt?: string | null;
+  /** Per-concept art direction. Optional for older locally stored drafts. */
+  layout?: ConceptLayoutId;
+  displayFont?: ConceptFontId;
+  /** When true, the share preview removes merchant logos and generated imagery. */
+  sendSafe?: boolean;
   reviewed: boolean;
   updatedAt: string;
 };

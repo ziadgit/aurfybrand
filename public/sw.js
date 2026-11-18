@@ -16,6 +16,9 @@ const SHELL_URLS = [
   "/examples/marlow-fen.jpg",
   "/examples/halcyon-swim.jpg",
   "/examples/fernway-grocers.jpg",
+  "/logos/marlow-fen.svg",
+  "/logos/halcyon-swim.svg",
+  "/logos/fernway-grocers.svg",
 ];
 
 self.addEventListener("install", (event) => {
@@ -46,6 +49,7 @@ const isAsset = (url) =>
   url.pathname.startsWith("/assets/") ||
   url.pathname.startsWith("/icons/") ||
   url.pathname.startsWith("/examples/") ||
+  url.pathname.startsWith("/logos/") ||
   url.pathname === "/manifest.webmanifest";
 
 self.addEventListener("fetch", (event) => {

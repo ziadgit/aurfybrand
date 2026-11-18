@@ -1,4 +1,4 @@
-import type { ConceptPaletteId } from "./types";
+import type { ConceptFontId, ConceptLayoutId, ConceptPaletteId } from "./types";
 
 export type ShowcaseExample = {
   merchantId: string;
@@ -11,6 +11,10 @@ export type ShowcaseExample = {
   palette: ConceptPaletteId;
   image: string;
   imageAlt: string;
+  logo: string;
+  layout: ConceptLayoutId;
+  displayFont: ConceptFontId;
+  signalNote: string;
   initials: string;
 };
 
@@ -33,6 +37,10 @@ export const SHOWCASE_EXAMPLES: ShowcaseExample[] = [
     image: "/examples/marlow-fen.jpg",
     imageAlt:
       "AI-generated illustrative still life of a café table with coffee, a phone and a card terminal; fictional example with no partnership.",
+    logo: "/logos/marlow-fen.svg",
+    layout: "editorial",
+    displayFont: "bodoni",
+    signalNote: "Fictional demo signal: a saved card doesn't follow the guest to the counter.",
     initials: "MF",
   },
   {
@@ -48,6 +56,10 @@ export const SHOWCASE_EXAMPLES: ShowcaseExample[] = [
     image: "/examples/halcyon-swim.jpg",
     imageAlt:
       "AI-generated illustrative boutique swimwear scene with folded towels and a phone; fictional example with no partnership.",
+    logo: "/logos/halcyon-swim.svg",
+    layout: "cover",
+    displayFont: "playfair",
+    signalNote: "Fictional demo signal: payment choice breaks between the app and a pop-up.",
     initials: "HS",
   },
   {
@@ -62,6 +74,10 @@ export const SHOWCASE_EXAMPLES: ShowcaseExample[] = [
     image: "/examples/fernway-grocers.jpg",
     imageAlt:
       "AI-generated illustrative market counter with produce, a phone and a card terminal; fictional example with no partnership.",
+    logo: "/logos/fernway-grocers.svg",
+    layout: "poster",
+    displayFont: "fraunces",
+    signalNote: "Fictional demo signal: weekend markets and stores run separate setups.",
     initials: "FG",
   },
 ];

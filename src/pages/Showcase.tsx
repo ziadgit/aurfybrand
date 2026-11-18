@@ -1,13 +1,13 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { ArrowRight, Check, ChevronLeft, ChevronRight, ShieldCheck, Sparkles, WifiOff } from "lucide-react";
+import { ArrowRight, ChevronLeft, ChevronRight, ShieldCheck, WifiOff } from "lucide-react";
 import { toast } from "sonner";
 import { useStudio } from "@/aurfy/store";
 import { useOnline } from "@/aurfy/use-online";
 import { SHOWCASE_EXAMPLES } from "@/aurfy/showcase";
-import { CONCEPT_PALETTES } from "@/aurfy/content";
 import { cn } from "@/lib/utils";
-import { BrandLockup, BrandMark } from "@/components/aurfy/brand";
+import { BrandLockup } from "@/components/aurfy/brand";
+import { ConceptCard } from "@/components/aurfy/concept-card";
 import { Button } from "@/components/ui/button";
 
 const TOTAL = SHOWCASE_EXAMPLES.length;
@@ -17,11 +17,8 @@ export default function Showcase() {
   const online = useOnline();
   const navigate = useNavigate();
   const [index, setIndex] = useState(0);
-  const [failedImages, setFailedImages] = useState<Record<string, boolean>>({});
   const touchStart = useRef<{ x: number; y: number } | null>(null);
   const example = SHOWCASE_EXAMPLES[index];
-  const palette = CONCEPT_PALETTES.find((item) => item.id === example.palette) ?? CONCEPT_PALETTES[0];
-  const imageFailed = Boolean(failedImages[example.image]);
 
   const go = (delta: number) => {
     setIndex((current) => (current + delta + TOTAL) % TOTAL);
@@ -164,115 +161,31 @@ export default function Showcase() {
               className="pointer-events-none absolute inset-0 translate-y-1.5 scale-[0.97] rotate-[0.7deg] rounded-[32px] border border-border/70 bg-card/70"
             />
 
-            <article
+            <div
               key={example.merchantId}
               role="group"
               aria-roledescription="slide"
               aria-label={`Example ${index + 1} of ${TOTAL}: ${example.name}`}
-              className="animate-deck-in relative z-10 overflow-hidden rounded-[32px] border border-border/60 shadow-lift"
-              style={{ background: palette.panel, color: palette.ink }}
+              className="animate-deck-in relative z-10"
             >
-              <div className="relative aspect-[16/10] w-full overflow-hidden bg-secondary">
-                {!imageFailed ? (
-                  <img
-                    src={example.image}
-                    alt={example.imageAlt}
-                    className="h-full w-full object-cover"
-                    loading="eager"
-                    decoding="async"
-                    onError={() => setFailedImages((current) => ({ ...current, [example.image]: true }))}
-                  />
-                ) : (
-                  <div className="absolute inset-0 flex items-center justify-center" style={{ background: palette.panel }}>
-                    <BrandMark className="h-16 w-16 opacity-40" />
-                    <span className="absolute bottom-3 left-3 text-[9px] opacity-60">Example visual unavailable</span>
-                  </div>
-                )}
-                <div
-                  aria-hidden="true"
-                  className="absolute inset-0"
-                  style={{
-                    background:
-                      "linear-gradient(180deg, rgba(9,9,18,0.32) 0%, rgba(9,9,18,0.02) 42%, rgba(9,9,18,0.44) 100%)",
-                  }}
-                />
-                <div className="absolute inset-x-3 top-3 flex items-start justify-between gap-2">
-                  <span className="inline-flex min-h-8 items-center gap-1.5 rounded-full bg-background/90 px-3 text-[9.5px] font-semibold text-foreground backdrop-blur">
-                    <span className="h-1.5 w-1.5 rounded-full bg-primary" aria-hidden="true" />
-                    Illustrative concept
-                  </span>
-                  <span className="inline-flex min-h-8 items-center gap-1.5 rounded-full bg-background/90 px-2.5 text-[9px] font-medium text-foreground backdrop-blur">
-                    <Sparkles className="h-3 w-3" aria-hidden="true" />
-                    AI-generated
-                  </span>
-                </div>
-              </div>
-
-              <div className="p-4 sm:p-6">
-                <div className="flex items-center justify-between gap-3">
-                  <div className="flex min-w-0 items-center gap-2.5">
-                    <span
-                      className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl text-[12px] font-bold"
-                      style={{ background: "hsl(45 40% 97%)", color: "hsl(234 30% 15%)" }}
-                      aria-hidden="true"
-                    >
-                      {example.initials}
-                    </span>
-                    <div className="min-w-0">
-                      <p className="truncate text-[16px] font-semibold leading-tight sm:text-[17px]">{example.name}</p>
-                      <p className="mt-0.5 flex items-center gap-1 text-[10.5px]" style={{ opacity: 0.68 }}>
-                        <span aria-hidden="true">×</span>
-                        <BrandMark className="h-4 w-4" />
-                        <span className="font-medium">Aurfy</span>
-                      </p>
-                    </div>
-                  </div>
-                  <span
-                    className="shrink-0 rounded-full border px-2.5 py-1 text-[9px] font-medium"
-                    style={{ borderColor: "rgba(255,255,255,0.2)", background: "rgba(255,255,255,0.08)" }}
-                  >
-                    {example.angleLabel}
-                  </span>
-                </div>
-
-                <h2 className="mt-3.5 max-w-[16ch] font-display text-[27px] leading-[1.06] tracking-[-0.01em] sm:text-[33px]">
-                  {example.headline}
-                </h2>
-                <p className="mt-1.5 max-w-[34ch] text-[11.5px] leading-snug sm:text-[12px] sm:leading-relaxed" style={{ opacity: 0.82 }}>
-                  {example.subhead}
-                </p>
-
-                <div className="mt-3 flex flex-wrap items-center gap-1.5">
-                  <span
-                    className="inline-flex min-h-8 items-center gap-1.5 rounded-full border px-2.5 text-[9.5px] font-medium"
-                    style={{ borderColor: "rgba(255,255,255,0.18)", background: "rgba(255,255,255,0.07)" }}
-                  >
-                    <Check className="h-3 w-3" style={{ color: palette.accent }} aria-hidden="true" />
-                    {example.capability}
-                  </span>
-                  <span
-                    className="hidden min-h-8 items-center rounded-full border px-2.5 text-[9px] font-medium sm:inline-flex"
-                    style={{ borderColor: "rgba(255,255,255,0.14)", opacity: 0.8 }}
-                  >
-                    {example.category}
-                  </span>
-                </div>
-
-                <div className="mt-3.5 border-t pt-2.5" style={{ borderColor: "rgba(255,255,255,0.16)" }}>
-                  <div className="flex items-end justify-between gap-3">
-                    <p className="max-w-[58%] text-[10px] leading-snug" style={{ opacity: 0.75 }}>
-                      Illustrative concept for discussion. No partnership implied.
-                    </p>
-                    <span className="flex shrink-0 items-center gap-1.5" aria-label="Aurfy concept study">
-                      <BrandMark className="h-5 w-5" />
-                      <span className="font-display text-[21px] italic leading-none" style={{ color: palette.accent }}>
-                        Aurfy
-                      </span>
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </article>
+              <ConceptCard
+                merchantName={example.name}
+                initials={example.initials}
+                category={example.category}
+                angleLabel={example.angleLabel}
+                headline={example.headline}
+                subhead={example.subhead}
+                capability={example.capability}
+                signalNote={example.signalNote}
+                palette={example.palette}
+                layout={example.layout}
+                fontId={example.displayFont}
+                imageUrl={example.image}
+                imageAlt={example.imageAlt}
+                logoUrl={example.logo}
+                className="rounded-[32px] border-border/60 shadow-lift"
+              />
+            </div>
 
             <div className="absolute inset-x-0 top-[19%] z-20 flex -translate-y-1/2 items-center justify-between px-2.5">
               <button
@@ -345,7 +258,7 @@ export default function Showcase() {
         <footer className="mt-2 shrink-0 border-t border-border/70 pt-2.5">
           <p className="flex items-start gap-1.5 text-[10px] leading-snug text-muted-foreground">
             <ShieldCheck className="mt-0.5 h-3 w-3 shrink-0" aria-hidden="true" />
-            Fictional merchants and AI-generated visuals. No partnership implied. Nothing is sent or published.
+            Fictional merchants, fictional logo marks and AI-generated visuals. No partnership implied. Nothing is sent or published.
           </p>
           <p className="mt-0.5 text-[9px] leading-snug text-muted-foreground">
             Aurfy · online and in-store payments · cards and digital wallets · one unified API
