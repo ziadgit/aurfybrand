@@ -2,6 +2,7 @@
   "name": "Aurfy Signal Studio",
   "short_name": "Aurfy Studio",
   "description": "Turn observed merchant signals into reviewed outreach and illustrative co-branded concepts. Hackathon prototype with a fictional demo library.",
+  "id": "/",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",

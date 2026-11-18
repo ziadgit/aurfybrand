@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, NavLink, Outlet, useLocation } from "react-router-dom";
 import {
-  ArrowRight,
   Check,
   ChevronRight,
   CloudOff,
@@ -176,8 +175,8 @@ function ResetDemo() {
         <AlertDialogHeader>
           <AlertDialogTitle>Reset to the fictional demo?</AlertDialogTitle>
           <AlertDialogDescription>
-            This replaces every merchant, signal selection, brief, concept, draft and pipeline note on this device with the
-            seeded demo workspace. Saved edits to demo records are lost. This cannot be undone.
+            This replaces every record on this device — including merchants you added manually, their signals, briefs, concepts,
+            drafts and pipeline notes — with the seeded demo workspace. This cannot be undone.
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
@@ -462,31 +461,5 @@ export function AppShell() {
         </ul>
       </nav>
     </div>
-  );
-}
-
-export function StepNext({
-  to,
-  label,
-  description,
-}: {
-  to: string;
-  label: string;
-  description?: string;
-}) {
-  return (
-    <Link
-      to={to}
-      className="surface flex min-h-[64px] items-center gap-3 p-4 transition hover:border-primary/30 hover:shadow-lift"
-    >
-      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary-soft text-primary">
-        <ArrowRight className="h-4 w-4" aria-hidden="true" />
-      </span>
-      <span className="min-w-0 flex-1">
-        <span className="block text-sm font-semibold text-foreground">{label}</span>
-        {description ? <span className="mt-0.5 block truncate text-xs text-muted-foreground">{description}</span> : null}
-      </span>
-      <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden="true" />
-    </Link>
   );
 }

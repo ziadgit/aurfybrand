@@ -1,6 +1,6 @@
 import { Bookmark, Check, ChevronDown, ExternalLink, Link2, MessageSquareQuote, ThumbsDown, TriangleAlert } from "lucide-react";
 import type { Signal, SignalStatus } from "@/aurfy/types";
-import { CATEGORY_LABEL, formatDate, hostOf } from "@/aurfy/utils";
+import { CATEGORY_LABEL, formatDate } from "@/aurfy/utils";
 import { cn } from "@/lib/utils";
 import { Pill } from "./ui-bits";
 
@@ -54,20 +54,25 @@ export function SignalCard({
           <Link2 className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
           <span className="truncate font-medium text-ink-soft">{signal.sourceName}</span>
         </span>
-        {signal.provenance === "user" && signal.sourceUrl ? (
-          <a
-            href={signal.sourceUrl}
-            target="_blank"
-            rel="noopener noreferrer nofollow"
-            className="inline-flex min-h-6 items-center gap-1 font-medium text-primary underline-offset-2 hover:underline"
-          >
-            {hostOf(signal.sourceUrl)}
-            <ExternalLink className="h-3 w-3" aria-hidden="true" />
-          </a>
+        {signal.sourceUrl ? (
+          signal.provenance === "user" ? (
+            <a
+              href={signal.sourceUrl}
+              target="_blank"
+              rel="noopener noreferrer nofollow"
+              className="inline-flex min-h-6 min-w-0 items-center gap-1 font-medium text-primary underline-offset-2 hover:underline"
+              title="Opens the user-supplied URL. Not verified by Aurfy."
+            >
+              <span className="max-w-[15rem] truncate">{signal.sourceUrl.replace(/^https?:\/\//, "")}</span>
+              <ExternalLink className="h-3 w-3 shrink-0" aria-hidden="true" />
+            </a>
+          ) : (
+            <span className="inline-flex min-w-0 items-center gap-1" title="Fictional demo URL — not a real page">
+              <span className="max-w-[15rem] truncate">{signal.sourceUrl.replace(/^https?:\/\//, "")}</span>
+            </span>
+          )
         ) : (
-          <span className="inline-flex min-w-0 items-center gap-1">
-            <span className="truncate">{hostOf(signal.sourceUrl)}</span>
-          </span>
+          <span className="text-muted-foreground">No URL supplied</span>
         )}
       </div>
 
@@ -75,7 +80,7 @@ export function SignalCard({
         <div>
           <dt className="font-mono-label text-[9px] text-muted-foreground">Published</dt>
           <dd className="mt-0.5 font-medium text-ink-soft">
-            {signal.sourceDate ? formatDate(signal.sourceDate) : "Not supplied (fictional demo)"}
+            {signal.sourceDate ? formatDate(signal.sourceDate) : signal.provenance === "demo" ? "Not supplied (fictional demo)" : "Not supplied by you"}
           </dd>
         </div>
         <div>

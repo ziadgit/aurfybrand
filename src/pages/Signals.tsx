@@ -148,7 +148,7 @@ export default function Signals() {
                       aria-pressed={category === option.value}
                       onClick={() => setCategory(option.value)}
                       className={cn(
-                        "flex min-h-10 items-center justify-center gap-1.5 rounded-full px-2 text-[12px] font-semibold transition",
+                        "flex min-h-11 items-center justify-center gap-1.5 rounded-full px-2 text-[12px] font-semibold transition",
                         category === option.value
                           ? "bg-card text-foreground shadow-sm"
                           : "text-muted-foreground hover:text-foreground",
@@ -172,7 +172,7 @@ export default function Signals() {
                       id="filter-status"
                       value={status}
                       onChange={(event) => setStatus(event.target.value as StatusFilter)}
-                      className="aurfy-input h-11 min-h-11 appearance-none py-2 pr-8 text-[13px]"
+                      className="aurfy-input h-11 min-h-11 py-2 pr-8 text-[13px]"
                     >
                       {STATUS_OPTIONS.map((option) => (
                         <option key={option.value} value={option.value}>
@@ -190,7 +190,7 @@ export default function Signals() {
                       id="filter-confidence"
                       value={confidence}
                       onChange={(event) => setConfidence(event.target.value as ConfidenceFilter)}
-                      className="aurfy-input h-11 min-h-11 appearance-none py-2 pr-8 text-[13px]"
+                      className="aurfy-input h-11 min-h-11 py-2 pr-8 text-[13px]"
                     >
                       {CONFIDENCE_OPTIONS.map((option) => (
                         <option key={option.value} value={option.value}>
@@ -321,7 +321,7 @@ export default function Signals() {
           </div>
 
           {selectedSignals.length > 0 ? (
-            <div className="fixed inset-x-3 bottom-[78px] z-30 lg:hidden" role="region" aria-label="Selection summary">
+            <div className="fixed inset-x-3 bottom-[calc(4.75rem+env(safe-area-inset-bottom,0px))] z-30 lg:hidden" role="region" aria-label="Selection summary">
               <Link
                 to="/brief"
                 className="flex min-h-[56px] items-center gap-3 rounded-2xl border border-primary/20 bg-primary px-4 text-primary-foreground shadow-lift"
@@ -340,6 +340,8 @@ export default function Signals() {
               </Link>
             </div>
           ) : null}
+
+          {selectedSignals.length > 0 ? <div className="h-16 lg:hidden" aria-hidden="true" /> : null}
 
           <div className="mt-4 flex items-center gap-2 rounded-2xl border border-dashed border-border bg-card/60 p-3 text-[11px] text-muted-foreground">
             <Radar className="h-4 w-4 shrink-0 text-primary" aria-hidden="true" />

@@ -285,6 +285,7 @@ export default function Intake() {
                   <div className="flex items-center gap-1.5">
                     <p className="truncate text-sm font-semibold text-foreground">{item.name}</p>
                     {isActive ? <Pill tone="primary">Current</Pill> : null}
+                    <Pill tone={item.isDemo ? "warning" : "outline"}>{item.isDemo ? "Demo" : "Manual"}</Pill>
                   </div>
                   <p className="mt-0.5 truncate text-[11px] text-muted-foreground">
                     {item.category || "No category"} · {recordStage?.label ?? "Research"}

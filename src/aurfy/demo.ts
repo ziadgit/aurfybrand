@@ -341,10 +341,10 @@ function briefForMarlow(): Brief {
       "• Whether the owner prioritises service speed or integration simplicity. (Ask directly.)",
       "• Whether the third location is confirmed. (Demo premise only.)",
     ].join("\n"),
-    reviewed: false,
+    reviewed: true,
     updatedAt: now(),
     generatedFrom: ["sg_marlow-fen_01", "sg_marlow-fen_03", "sg_marlow-fen_06", "sg_marlow-fen_08"],
-    generation: "manual",
+    generation: "template",
   };
 }
 
@@ -398,15 +398,15 @@ export function createDemoWorkspace(): WorkspaceState {
 
   const concepts: Record<string, ConceptDraft> = {
     "marlow-fen": {
-      headline: "One wallet. Every counter.",
+      headline: "One payment layer. Every counter.",
       subhead:
-        "A connected payment experience across the Marlow & Fen app, the café counter and online beans — with cards and digital wallets welcome.",
+        "A connected payment experience across the Marlow & Fen app, the café counter and online beans, supported by one Aurfy setup.",
       palette: "clay",
       logoDataUrl: null,
       merchantDisplayName: "Marlow & Fen",
       signalId: "sg_marlow-fen_03",
       capabilityId: "cap_payments",
-      reviewed: false,
+      reviewed: true,
       updatedAt: now(),
     },
     "halcyon-swim": emptyConcept("Halcyon Swim"),
@@ -420,7 +420,7 @@ export function createDemoWorkspace(): WorkspaceState {
       hypothesis:
         "My hypothesis — not a finding — is that this seam between app and counter may make repeat ordering feel less joined-up than guests expect.",
       capability:
-        "Aurfy can support online and in-store payments, so the same payment experience can continue from app to counter, with cards and digital wallets included.",
+        "Aurfy can support online and in-store payments, so the same payment experience can continue from app to counter. Its unified API can keep the app, website and store systems connected without a separate integration for each.",
       question:
         "When a guest saves a card in your app, what would you want to happen the next time they order at the counter?",
       generation: "template",
@@ -439,7 +439,7 @@ export function createDemoWorkspace(): WorkspaceState {
   const pipeline: Record<string, PipelineEntry> = {
     "marlow-fen": {
       stage: "concept_ready",
-      nextAction: "Review the concept and note, then copy the outreach manually",
+      nextAction: "Review the outreach draft, copy it manually, then log the send",
       dueDate: daysAhead(2),
       notes:
         "Demo record. Signals and brief are illustrative; no message has been sent and no partnership exists.",
@@ -476,7 +476,7 @@ export function createDemoWorkspace(): WorkspaceState {
       angle: "connected",
       capabilityIds: ["cap_payments", "cap_api"],
       capabilities: defaultCapabilities(),
-      reviewed: false,
+      reviewed: true,
       updatedAt: now(),
     },
     "halcyon-swim": emptyPositioning(),

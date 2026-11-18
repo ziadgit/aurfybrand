@@ -187,16 +187,26 @@ export default function Concept() {
                 </p>
               </div>
 
-              <div className="relative mt-3 flex flex-wrap items-center gap-1.5">
-                <span className="rounded-full px-2 py-1 text-[9px] font-medium" style={{ background: "rgba(255,255,255,0.1)" }}>
-                  {(signal?.provenance === "demo" ? "Demo signal · " : signal ? "User-supplied · " : "") +
-                    (signal ? "not verified" : "No signal chosen")}
-                </span>
-                {angle ? (
-                  <span className="rounded-full px-2 py-1 text-[9px] font-medium" style={{ background: "rgba(255,255,255,0.1)" }}>
-                    {angle.label}
+              <div
+                className="relative mt-3 rounded-xl border px-3 py-2"
+                style={{ borderColor: "rgba(255,255,255,0.14)", background: "rgba(255,255,255,0.05)" }}
+              >
+                <div className="flex flex-wrap items-center gap-1.5">
+                  <span className="font-mono-label text-[7.5px] tracking-[0.14em]" style={{ opacity: 0.55 }}>
+                    Signal behind the idea
                   </span>
-                ) : null}
+                  {angle ? (
+                    <span className="rounded-full px-1.5 py-0.5 text-[8px] font-medium" style={{ background: "rgba(255,255,255,0.1)" }}>
+                      {angle.label}
+                    </span>
+                  ) : null}
+                </div>
+                <p className="mt-1 line-clamp-2 text-[10.5px] leading-snug" style={{ opacity: 0.85 }}>
+                  {signal ? signal.title : "No grounding signal selected."}
+                </p>
+                <p className="mt-1 text-[8.5px]" style={{ opacity: 0.5 }}>
+                  {signal?.provenance === "demo" ? "Fictional demo signal — not verified" : signal ? "User-supplied — not independently verified" : "Not evidence"}
+                </p>
               </div>
 
               <div className="relative mt-4 border-t pt-3" style={{ borderColor: "rgba(255,255,255,0.16)" }}>
@@ -278,7 +288,7 @@ export default function Concept() {
                   id="concept-signal"
                   value={concept.signalId ?? ""}
                   onChange={(event) => updateConcept({ signalId: event.target.value || null })}
-                  className="aurfy-input h-12 min-h-12 appearance-none text-[13px]"
+                  className="aurfy-input h-12 min-h-12 text-[13px]"
                 >
                   <option value="">No signal — keep it generic</option>
                   {selectedSignals.map((item) => (
@@ -312,7 +322,7 @@ export default function Concept() {
                   id="concept-capability"
                   value={concept.capabilityId ?? ""}
                   onChange={(event) => updateConcept({ capabilityId: event.target.value || null })}
-                  className="aurfy-input h-12 min-h-12 appearance-none text-[13px]"
+                  className="aurfy-input h-12 min-h-12 text-[13px]"
                 >
                   <option value="">Choose an approved capability…</option>
                   {usableCapabilities.map((item) => (

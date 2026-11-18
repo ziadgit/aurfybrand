@@ -1,8 +1,10 @@
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowRight, ClipboardList, FileSearch, Info, Layers, Sparkles, TriangleAlert } from "lucide-react";
+import { ArrowRight, ClipboardList, FileSearch, Info, Layers, Loader2, Sparkles, TriangleAlert } from "lucide-react";
 import { toast } from "sonner";
 import { useStudio } from "@/aurfy/store";
+import { useOnline } from "@/aurfy/use-online";
+import { AI_AVAILABLE, AI_MODEL_LABEL, requestAiBrief } from "@/aurfy/ai";
 import { templateBrief } from "@/aurfy/draft";
 import { CATEGORY_LABEL, formatDateTime } from "@/aurfy/utils";
 import { cn } from "@/lib/utils";
@@ -30,10 +32,12 @@ function GenerationBadge({ generation }: { generation: "template" | "ai" | "manu
 }
 
 export default function Brief() {
-  const { merchant, signals, selectedSignals, brief, updateBrief } = useStudio();
+  const { merchant, signals, selectedSignals, brief, positioning, updateBrief } = useStudio();
+  const online = useOnline();
   const customerSelected = selectedSignals.filter((signal) => signal.category === "customer").length;
   const peerSelected = selectedSignals.filter((signal) => signal.category === "peer").length;
   const [generating, setGenerating] = useState(false);
+  const [aiBusy, setAiBusy] = useState(false);
   const hasContent = Boolean(brief.observed.trim() || brief.hypotheses.trim() || brief.unknowns.trim());
 
   const briefText = useMemo(
@@ -55,6 +59,44 @@ export default function Brief() {
       ].join("\n"),
     [brief, merchant.name],
   );
+
+  const assembleWithAi = async () => {
+    setAiBusy(true);
+    const result = await requestAiBrief({
+      merchant,
+      signals: selectedSignals,
+      angle: positioning.angle,
+      capabilityIds: positioning.capabilityIds,
+      capabilities: positioning.capabilities,
+    });
+    if (result.ok) {
+      updateBrief({
+        observed: result.draft.observed,
+        hypotheses: result.draft.hypotheses,
+        unknowns: result.draft.unknowns,
+        generation: "ai",
+        generatedFrom: selectedSignals.map((signal) => signal.id),
+        reviewed: false,
+      });
+      toast.success("AI-assisted brief ready", {
+        description: `${AI_MODEL_LABEL} via server-side AI. Review every line; AI can still be wrong.`,
+      });
+    } else {
+      const fallback = templateBrief(merchant, selectedSignals);
+      updateBrief({
+        observed: fallback.observed,
+        hypotheses: fallback.hypotheses,
+        unknowns: fallback.unknowns,
+        generation: "template",
+        generatedFrom: selectedSignals.map((signal) => signal.id),
+        reviewed: false,
+      });
+      toast.warning("AI unavailable — deterministic template used", {
+        description: result.reason,
+      });
+    }
+    setAiBusy(false);
+  };
 
   const assemble = () => {
     setGenerating(true);
@@ -171,6 +213,23 @@ export default function Brief() {
               {generating ? "Assembling…" : "Assemble from selected signals"}
             </Button>
           )}
+          <Button
+            type="button"
+            variant="outline"
+            className="tap min-h-11"
+            onClick={assembleWithAi}
+            disabled={aiBusy || selectedSignals.length === 0 || !online}
+            title={
+              !online
+                ? "AI drafting needs a connection"
+                : AI_AVAILABLE
+                  ? "Server-side AI, only the selected cards are sent"
+                  : "AI is not connected"
+            }
+          >
+            {aiBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
+            {aiBusy ? "Drafting with AI…" : "Draft with AI"}
+          </Button>
           <CopyButton text={briefText} label="Copy brief" variant="outline" />
           <Button
             asChild
@@ -195,8 +254,9 @@ export default function Brief() {
           </span>
         </div>
         <p className="mt-2 text-[11px] leading-relaxed text-muted-foreground">
-          AI-assisted drafting is wired as an optional server-side path in the full build. If it is unavailable, this template path
-          remains complete and the UI says which path produced the text.
+          {AI_AVAILABLE
+            ? `AI-assisted drafting is connected server-side (${AI_MODEL_LABEL}). Only the selected cards and approved capability wording are sent. If it fails or you are offline, the deterministic template is applied and the badge above reads “Template draft”.`
+            : "AI drafting is not connected in this build. The deterministic template is complete on its own."}
         </p>
       </section>
 

@@ -189,7 +189,7 @@ export default function Pipeline() {
                   <button
                     type="button"
                     onClick={() => updatePipeline({ dueDate: todayISO() })}
-                    className="inline-flex min-h-7 items-center rounded-full border border-input bg-card px-2 text-[10px] font-semibold text-muted-foreground hover:text-foreground"
+                    className="inline-flex min-h-9 items-center rounded-full border border-input bg-card px-2.5 text-[10px] font-semibold text-muted-foreground hover:text-foreground"
                   >
                     Today
                   </button>
@@ -200,7 +200,7 @@ export default function Pipeline() {
                       next.setDate(next.getDate() + 7);
                       updatePipeline({ dueDate: next.toISOString().slice(0, 10) });
                     }}
-                    className="inline-flex min-h-7 items-center rounded-full border border-input bg-card px-2 text-[10px] font-semibold text-muted-foreground hover:text-foreground"
+                    className="inline-flex min-h-9 items-center rounded-full border border-input bg-card px-2.5 text-[10px] font-semibold text-muted-foreground hover:text-foreground"
                   >
                     +7 days
                   </button>
@@ -308,6 +308,7 @@ export default function Pipeline() {
                         <span className="mt-0.5 block truncate text-[10.5px] text-muted-foreground">{itemPipeline?.nextAction || "No next action"}</span>
                         <span className="mt-1 flex flex-wrap items-center gap-1.5">
                           <StageBadge stage={itemPipeline?.stage ?? "research"} />
+                          <Pill tone={item.isDemo ? "warning" : "outline"}>{item.isDemo ? "Demo" : "Manual"}</Pill>
                           <span className={cn("text-[10px]", itemDue.tone === "overdue" ? "font-semibold text-destructive" : "text-muted-foreground")}>
                             {itemDue.label}
                           </span>

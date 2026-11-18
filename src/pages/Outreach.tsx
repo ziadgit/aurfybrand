@@ -1,7 +1,8 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import {
   AlertCircle,
+  Loader2,
   ArrowRight,
   Check,
   ClipboardCheck,
@@ -16,7 +17,8 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { useStudio } from "@/aurfy/store";
-import { AI_AVAILABLE } from "@/aurfy/ai";
+import { AI_AVAILABLE, AI_MODEL_LABEL, requestAiOutreach } from "@/aurfy/ai";
+import { useOnline } from "@/aurfy/use-online";
 import { ANGLES } from "@/aurfy/content";
 import { templateOutreach } from "@/aurfy/draft";
 import { composeMessage, formatDateTime } from "@/aurfy/utils";
@@ -82,6 +84,8 @@ export default function Outreach() {
     updatePipeline,
     capabilityById,
   } = useStudio();
+  const online = useOnline();
+  const [aiBusy, setAiBusy] = useState(false);
 
   const angle = ANGLES.find((item) => item.id === (outreach.angle ?? positioning.angle));
   const usableCapabilities = positioning.capabilities.filter((capability) => positioning.capabilityIds.includes(capability.id));
@@ -103,7 +107,7 @@ export default function Outreach() {
   const generationLabel =
     outreach.generation === "ai" ? "AI-assisted" : outreach.generation === "template" ? "Template" : "Manual";
 
-  const generateTemplate = () => {
+  const buildTemplate = (note?: string) => {
     const groundingSignal = primarySignal ?? selectedSignals[0];
     const groundingCapability = capability ?? usableCapabilities[0];
     const parts = templateOutreach(
@@ -117,13 +121,50 @@ export default function Outreach() {
       ...parts,
       generation: "template",
       generationNote:
+        note ??
         "Deterministic template built from the selected signal, positioning angle and approved capability. No AI model was used.",
       signalId: groundingSignal?.id ?? null,
       capabilityId: groundingCapability?.id ?? null,
       angle: positioning.angle,
       reviewed: false,
     });
+  };
+
+  const generateTemplate = () => {
+    buildTemplate();
     toast.success("Template draft built", { description: "Edit the wording, then review before copying." });
+  };
+
+  const generateWithAi = async () => {
+    setAiBusy(true);
+    const result = await requestAiOutreach({
+      merchant,
+      signals: selectedSignals,
+      angle: positioning.angle,
+      capabilityIds: positioning.capabilityIds,
+      capabilities: positioning.capabilities,
+      chosenSignalId: primarySignal?.id ?? null,
+    });
+    if (result.ok) {
+      updateOutreach({
+        ...result.draft,
+        generation: "ai",
+        generationNote: `AI-assisted draft from ${result.model} via server-side AI. Review every part; AI output can still be wrong or overstate a claim.`,
+        signalId: primarySignal?.id ?? selectedSignals[0]?.id ?? null,
+        capabilityId: capability?.id ?? usableCapabilities[0]?.id ?? null,
+        angle: positioning.angle,
+        reviewed: false,
+      });
+      toast.success("AI-assisted draft ready", {
+        description: "Still a draft. Review the provenance and capability wording before copying.",
+      });
+    } else {
+      buildTemplate(
+        "AI drafting was unavailable, so this is the deterministic template. It uses only your selected signal and approved capability. Review before copying.",
+      );
+      toast.warning("AI unavailable — deterministic template used", { description: result.reason });
+    }
+    setAiBusy(false);
   };
 
   if (!positioning.angle || usableCapabilities.length === 0) {
@@ -180,7 +221,7 @@ export default function Outreach() {
                   id="outreach-signal"
                   value={outreach.signalId ?? ""}
                   onChange={(event) => updateOutreach({ signalId: event.target.value || null, reviewed: false })}
-                  className="aurfy-input h-12 min-h-12 appearance-none text-[12.5px]"
+                  className="aurfy-input h-12 min-h-12 text-[12.5px]"
                 >
                   <option value="">No signal — keep generic</option>
                   {selectedSignals.map((signal) => (
@@ -199,7 +240,7 @@ export default function Outreach() {
                   id="outreach-capability"
                   value={outreach.capabilityId ?? ""}
                   onChange={(event) => updateOutreach({ capabilityId: event.target.value || null, reviewed: false })}
-                  className="aurfy-input h-12 min-h-12 appearance-none text-[12.5px]"
+                  className="aurfy-input h-12 min-h-12 text-[12.5px]"
                 >
                   <option value="">Choose a capability…</option>
                   {usableCapabilities.map((item) => (
@@ -305,16 +346,17 @@ export default function Outreach() {
                 type="button"
                 variant="outline"
                 className="tap min-h-11"
-                disabled
-                title="AI drafting is not connected in this build"
+                onClick={generateWithAi}
+                disabled={aiBusy || !online || usableCapabilities.length === 0}
+                title={!online ? "AI drafting needs a connection" : "Server-side AI receives only the merchant fields, selected cards and approved wording"}
               >
-                <Sparkles className="h-4 w-4" />
-                Draft with AI
+                {aiBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
+                {aiBusy ? "Drafting with AI…" : "Draft with AI"}
               </Button>
             </div>
             <p className="mt-2 text-[11px] leading-relaxed text-muted-foreground">
               {AI_AVAILABLE
-                ? "AI output would still require review before copy; the template path stays available."
+                ? `Connected server-side with ${AI_MODEL_LABEL}. Only the selected signal cards, the merchant name/category/notes, the angle and approved capability wording are sent. AI can still be wrong, so all output requires review; if it is offline or fails, the deterministic template is applied and labeled as such.`
                 : "This build does not call an AI service for outreach. No prompt or draft text is sent anywhere. The template path is complete on its own."}
             </p>
           </section>

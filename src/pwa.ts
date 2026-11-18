@@ -1,9 +1,16 @@
 export function registerServiceWorker() {
   if (typeof window === "undefined") return;
   if (!("serviceWorker" in navigator)) return;
-  // The dev server must never serve a cached shell over fresh code, so the
-  // service worker is production-only. The published build is installable.
-  if (!import.meta.env.PROD) return;
+
+  // The Enter live preview is served by Vite's dev server, which loads
+  // /src/main.tsx directly. Skip the worker there so hot updates never compete
+  // with a cached shell. Every compiled build uses hashed /assets/* entry
+  // points, including Enter's development-mode build, and does register.
+  const servedByDevServer = Array.from(document.querySelectorAll<HTMLScriptElement>("script[src]")).some((script) =>
+    script.src.includes("/src/main.tsx"),
+  );
+  if (servedByDevServer) return;
+
   window.addEventListener("load", () => {
     navigator.serviceWorker.register("/sw.js").catch(() => {
       // Installation support varies by browser and embedding context; the app

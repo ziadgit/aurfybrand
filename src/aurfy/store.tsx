@@ -527,6 +527,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
   return <StudioContext.Provider value={value}>{children}</StudioContext.Provider>;
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function useStudio(): StudioContextValue {
   const context = useContext(StudioContext);
   if (!context) throw new Error("useStudio must be used inside StudioProvider");

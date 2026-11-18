@@ -118,7 +118,7 @@ export function templateConcept(
       ? "One integration. Every checkout."
       : angle === "choice"
         ? "Pay your way. Everywhere."
-        : "One wallet. Every counter.";
+        : "One payment layer. Every counter.";
 
   const capabilityPhrase = capability
     ? capability.label.toLowerCase()

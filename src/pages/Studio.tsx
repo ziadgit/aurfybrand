@@ -321,9 +321,9 @@ export default function Studio() {
           No auto-sending, no social posting, no campaign actions. Outreach is copied by hand and the co-branded concept is marked
           “Illustrative concept for discussion. No partnership implied.”
         </TruthNote>
-        <TruthNote tone="info" title="AI is optional" icon={Sparkles}>
-          Drafting falls back to a deterministic template. If server-side AI is available, the draft is explicitly labeled
-          AI-assisted; otherwise nothing pretends an AI produced it.
+        <TruthNote tone="info" title="AI is optional and labeled" icon={Sparkles}>
+          Brief and outreach drafting can use connected server-side AI. When it fails or you are offline, a deterministic template
+          is applied instead and the draft is labeled accordingly. Nothing pretends AI wrote a template.
         </TruthNote>
         <TruthNote tone="info" title="Offline & install" icon={CloudOff}>
           The production build ships a manifest, icons and a service worker for the app shell. Offline only restores saved work and
