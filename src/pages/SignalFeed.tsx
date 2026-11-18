@@ -170,8 +170,6 @@ export default function SignalFeed() {
     return { pool, visible: makeInitial(pool), cursor: Math.min(6, pool.length) };
   });
 
-  const items = useMemo(() => buildFeed(state), [state]);
-
   const queued = useMemo(
     () =>
       state.merchants
@@ -229,6 +227,57 @@ export default function SignalFeed() {
     }, 45);
     return () => window.clearInterval(timer);
   }, [mode, playing, autoScroll, selected, queueOpen, menuOpen, focusPaused]);
+
+  const boards = useMemo(
+    () =>
+      state.merchants
+        .map((merchant) => {
+          const concept = state.concepts[merchant.id];
+          const positioning = state.positioning[merchant.id];
+          const pipeline = state.pipeline[merchant.id];
+          const signals = state.signalsByMerchant[merchant.id] ?? [];
+          const signal =
+            signals.find((item) => item.id === concept?.signalId) ??
+            signals.find((item) => item.status === "selected") ??
+            signals[0];
+          const capability =
+            positioning?.capabilities.find((item) => item.id === concept?.capabilityId) ??
+            positioning?.capabilities.find((item) => positioning?.capabilityIds.includes(item.id));
+          const angle = ANGLES.find((item) => item.id === positioning?.angle);
+          const hasConcept = Boolean(concept && (concept.headline.trim() || concept.imageUrl));
+          return {
+            merchant,
+            concept,
+            pipeline,
+            signal,
+            capability,
+            angle,
+            hasConcept,
+            queued: Boolean(pipeline?.queuedAt),
+          };
+        })
+        .filter((board) => board.hasConcept || board.queued)
+        .sort((a, b) => {
+          if (a.queued && !b.queued) return -1;
+          if (b.queued && !a.queued) return 1;
+          return a.merchant.name.localeCompare(b.merchant.name);
+        }),
+    [state],
+  );
+
+  const switchMode = (next: ViewMode) => {
+    setMode(next);
+    setSelected(null);
+    setQueueOpen(false);
+    setAutoScroll(next === "stream" && playing && canAutoRef.current);
+    feedRef.current?.scrollTo({ top: 0, behavior: "auto" });
+  };
+
+  const openBoard = (merchantId: string, hasConcept: boolean) => {
+    setActiveMerchant(merchantId);
+    if (!hasConcept) dequeueCoBrand(merchantId);
+    navigate(hasConcept ? "/concept" : "/signals");
+  };
 
   const merchantFor = (item: FeedItem) => findFeedMerchant(state, item);
   const isQueued = (item: FeedItem) => {
