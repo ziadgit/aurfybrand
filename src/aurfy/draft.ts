@@ -12,6 +12,7 @@ export type OutreachParts = {
 const provenanceLabel = (signal: Signal) => {
   if (signal.provenance === "demo") return "Fictional demo signal";
   if (signal.provenance === "public") return "Public page snapshot, not independently audited";
+  if (signal.provenance === "news") return "Live public news headline (article not fetched)";
   if (signal.provenance === "clay") return "Simulated Clay record (synthetic)";
   return "User-supplied, unverified";
 };
@@ -64,6 +65,9 @@ export function templateBrief(merchant: Merchant, signals: Signal[]): DraftResul
     signals.some((signal) => signal.provenance === "clay")
       ? "• Clay simulation records are synthetic. They are not real enrichment, a real merchant or a real source and cannot support a market claim."
       : "",
+    signals.some((signal) => signal.provenance === "news")
+      ? "• Live news records are headlines from a public RSS feed; the article bodies were not fetched or independently verified."
+      : "",
     "• Whether these observations are representative of the wider customer base. (Open question.)",
   ]
     .filter(Boolean)
@@ -91,9 +95,11 @@ export function templateOutreach(
   const sourceLead =
     primary?.provenance === "public"
       ? "In a public page snapshot (not independently audited): "
-      : primary?.provenance === "clay"
-        ? "In a simulated Clay record (synthetic, not real research): "
-        : primary?.provenance === "demo"
+      : primary?.provenance === "news"
+        ? "In a live public headline (article not fetched): "
+        : primary?.provenance === "clay"
+          ? "In a simulated Clay record (synthetic, not real research): "
+          : primary?.provenance === "demo"
           ? "In a fictional demo signal: "
           : "In our working notes: ";
 

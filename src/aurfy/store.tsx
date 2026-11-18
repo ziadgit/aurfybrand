@@ -65,6 +65,7 @@ type StudioContextValue = {
   setActiveMerchant: (id: string) => void;
   addMerchant: (input: NewMerchantInput) => Merchant;
   addSourcedMerchant: (input: SourcedMerchantInput) => { merchantId: string; created: boolean; signalCount: number };
+  addSignalsToMerchant: (merchantId: string, signals: Omit<Signal, "id" | "status" | "addedAt">[]) => number;
   updateMerchant: (patch: Partial<Pick<Merchant, "name" | "url" | "category" | "notes">>) => void;
   deleteMerchant: (id: string) => void;
   setSignalStatus: (signalId: string, status: SignalStatus) => void;
@@ -348,6 +349,40 @@ export function StudioProvider({ children }: { children: ReactNode }) {
       });
 
       return { merchantId, created: true, signalCount: signals.length };
+    },
+    [state],
+  );
+
+  const addSignalsToMerchant = useCallback(
+    (merchantId: string, signals: Omit<Signal, "id" | "status" | "addedAt">[]) => {
+      const existing = state.signalsByMerchant[merchantId] ?? [];
+      const known = new Set(existing.map((signal) => `${signal.sourceUrl}|${signal.title}`));
+      const toAdd = signals.filter((signal) => !known.has(`${signal.sourceUrl}|${signal.title}`));
+      if (toAdd.length === 0) return 0;
+
+      const addedAt = new Date().toISOString();
+      const prepared = toAdd.map((signal, index) => ({
+        ...signal,
+        id: `sg_${merchantId}_live_${Date.now().toString(36)}_${index}`,
+        status: "new" as SignalStatus,
+        addedAt,
+      }));
+
+      setState((current) => {
+        const currentSignals = current.signalsByMerchant[merchantId] ?? [];
+        const currentKnown = new Set(currentSignals.map((signal) => `${signal.sourceUrl}|${signal.title}`));
+        const additions = prepared.filter((signal) => !currentKnown.has(`${signal.sourceUrl}|${signal.title}`));
+        if (additions.length === 0) return current;
+        return touch({
+          ...current,
+          signalsByMerchant: {
+            ...current.signalsByMerchant,
+            [merchantId]: [...additions, ...currentSignals],
+          },
+        });
+      });
+
+      return prepared.length;
     },
     [state],
   );
@@ -651,6 +686,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
     setActiveMerchant,
     addMerchant,
     addSourcedMerchant,
+    addSignalsToMerchant,
     updateMerchant,
     deleteMerchant,
     setSignalStatus,

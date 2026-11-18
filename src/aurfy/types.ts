@@ -1,7 +1,7 @@
 export type SignalCategory = "customer" | "peer";
 export type SignalStatus = "new" | "selected" | "saved" | "rejected";
 export type Confidence = "low" | "medium" | "high";
-export type Provenance = "demo" | "user" | "public" | "clay";
+export type Provenance = "demo" | "user" | "public" | "clay" | "news";
 
 export type Signal = {
   id: string;

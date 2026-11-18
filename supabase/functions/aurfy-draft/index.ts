@@ -11,7 +11,7 @@ const SYSTEM_PROMPT = `You help a lean B2B go-to-market team at Aurfy draft a me
 
 Hard rules:
 1. Use ONLY facts present in the supplied JSON. Never invent an article, date, metric, quote, trend, engagement number, competitor claim or proof of merchant interest.
-2. Demo signals are fictional prototypes. Attribute them explicitly as fictional/demo. User-supplied signals are unverified. Public page snapshots are observed pages, not independently audited research. Clay simulation records are synthetic and must never be treated as real evidence. Never upgrade any of them to verified research.
+2. Demo signals are fictional prototypes. Attribute them explicitly as fictional/demo. User-supplied signals are unverified. Public page snapshots are observed pages, not independently audited research. Clay simulation records are synthetic and must never be treated as real evidence. Live news records are headlines from a public RSS feed; their article bodies were not fetched, so do not present them as verified reporting. Never upgrade any of them to verified research.
 3. Aurfy capabilities are limited to: online and in-store payments; cards and digital wallets; one unified API. Never add rates, coverage, certifications, client names, partnerships, performance or launch claims.
 4. Clearly separate observation from inference. A hypothesis must read as a hypothesis. Unknowns must include what the evidence cannot support.
 5. No promises, no guarantees, no claim that a partnership exists, no auto-send language.
@@ -127,9 +127,11 @@ Deno.serve(async (req) => {
             ? "demo (fictional)"
             : signal.provenance === "public"
               ? "public page snapshot (not independently audited)"
-              : signal.provenance === "clay"
-                ? "simulated Clay record (synthetic, not real data)"
-                : "user-supplied (unverified)",
+              : signal.provenance === "news"
+                ? "live public news headline (article not fetched)"
+                : signal.provenance === "clay"
+                  ? "simulated Clay record (synthetic, not real data)"
+                  : "user-supplied (unverified)",
         sourceName: clean(signal.sourceName ?? "", 160),
         sourceDate: signal.sourceDate ? clean(signal.sourceDate, 40) : "not supplied",
         retrievedAt: signal.retrievedAt ? "retrieved" : "not retrieved by this app",

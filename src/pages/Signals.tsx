@@ -9,12 +9,13 @@ import { cn } from "@/lib/utils";
 import { PageHeader } from "@/components/aurfy/page-header";
 import { PasteSignalDialog } from "@/components/aurfy/paste-signal-dialog";
 import { SignalCard } from "@/components/aurfy/signal-card";
+import { LiveNewsPanel } from "@/components/aurfy/live-news-panel";
 import { EmptyState, Pill, TruthNote } from "@/components/aurfy/ui-bits";
 
 type CategoryFilter = "all" | SignalCategory;
 type StatusFilter = "all" | SignalStatus;
 type ConfidenceFilter = "all" | Confidence;
-type ProvenanceFilter = "all" | "public" | "clay" | "demo" | "user";
+type ProvenanceFilter = "all" | "public" | "news" | "clay" | "demo" | "user";
 
 const STATUS_OPTIONS: { value: StatusFilter; label: string }[] = [
   { value: "all", label: "All statuses" },
@@ -34,6 +35,7 @@ const CONFIDENCE_OPTIONS: { value: ConfidenceFilter; label: string }[] = [
 const PROVENANCE_OPTIONS: { value: ProvenanceFilter; label: string }[] = [
   { value: "all", label: "All sources" },
   { value: "public", label: "Public snapshot" },
+  { value: "news", label: "Live news" },
   { value: "clay", label: "Clay simulation" },
   { value: "demo", label: "Demo library" },
   { value: "user", label: "Pasted by you" },
@@ -90,13 +92,13 @@ export default function Signals() {
         }
       />
 
-      <TruthNote tone="demo" title="No live research is connected">
-        {DEMO_LIBRARY_NOTE} User-pasted text is labeled and never fetched. Signals added from the prospect engine keep their own source
-        labels: public snapshots cite the page read on 18 Nov 2026, while Clay records are synthetic. There is no live LinkedIn, social
-        or news feed access.
+      <TruthNote tone="demo" title="Sources stay labeled">
+        {DEMO_LIBRARY_NOTE} User-pasted text is labeled and never fetched. Public page lookups and live RSS headlines are opt-in and keep
+        their source URLs and timestamps; Clay records are synthetic. There is no LinkedIn or social feed access.
       </TruthNote>
 
       {!merchant.isDemo && signals.length === 0 ? (
+        <>
         <EmptyState
           icon={Radar}
           title="This workspace has no signals yet"
@@ -120,6 +122,8 @@ export default function Signals() {
             </div>
           }
         />
+        <LiveNewsPanel />
+        </>
       ) : (
         <>
           <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_288px] lg:items-start">

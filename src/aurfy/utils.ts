@@ -140,6 +140,7 @@ export const PROVENANCE_LABEL: Record<Provenance, string> = {
   user: "User-supplied",
   public: "Public snapshot",
   clay: "Clay simulation",
+  news: "Live news · RSS",
 };
 
 export const PROVENANCE_DETAIL: Record<Provenance, string> = {
@@ -147,6 +148,7 @@ export const PROVENANCE_DETAIL: Record<Provenance, string> = {
   user: "User-supplied, not independently verified",
   public: "Public page snapshot; not independently audited",
   clay: "Simulated Clay record; synthetic, not real enrichment",
+  news: "Live public news headline; article not fetched or verified",
 };
 
 export function merchantSourceMeta(merchant: Pick<Merchant, "isDemo" | "recordSource">): {

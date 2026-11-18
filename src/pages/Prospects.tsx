@@ -19,6 +19,7 @@ import { cn } from "@/lib/utils";
 import { PageHeader } from "@/components/aurfy/page-header";
 import { Button } from "@/components/ui/button";
 import { Pill, TruthNote } from "@/components/aurfy/ui-bits";
+import { LiveLookup } from "@/components/aurfy/live-lookup";
 
 type SourceFilter = "all" | ProspectSource;
 
@@ -125,7 +126,7 @@ export default function Prospects() {
       <PageHeader
         eyebrow="Prospect engine"
         title="New co-brands, surfaced."
-        description="A rule-based scan over a small bundled dataset. Three records are read from real public pages; three are clearly labeled Clay simulations. Add a company to import its signals into the studio."
+        description="Pull any real public company page on demand, fetch current public headlines, or scan a small bundled dataset. Sourced and simulated records keep their own labels."
         action={
           <Button asChild variant="outline" className="tap min-h-11">
             <Link to="/intake">
@@ -136,10 +137,12 @@ export default function Prospects() {
         }
       />
 
-      <TruthNote tone="demo" title="Real snapshot, simulated Clay, no live enrichment">
-        Public records were read from the companies&apos; own pages on {formatDate(PUBLIC_SNAPSHOT_DATE)} and are limited to what
-        those pages stated. Clay records, their companies, enrichment and signals are synthetic. No Clay account, API key, LinkedIn
-        access or live enrichment runs here. Fit scores are deterministic rules, not predictions.
+      <LiveLookup />
+
+      <TruthNote tone="demo" title="Bundled snapshot + simulated Clay">
+        The scan below uses three public snapshot records read on {formatDate(PUBLIC_SNAPSHOT_DATE)} and three synthetic Clay records.
+        The live lookup above is the on-demand path for new public pages and headlines. No Clay account, API key, LinkedIn access or
+        scheduled enrichment runs here. Fit scores are deterministic rules, not predictions.
       </TruthNote>
 
       <section className="surface p-4 sm:p-5" aria-label="Prospect scan controls">

@@ -41,6 +41,8 @@ export function SignalCard({
           </Pill>
         ) : signal.provenance === "public" ? (
           <Pill tone="primary">Public snapshot</Pill>
+        ) : signal.provenance === "news" ? (
+          <Pill tone="accent">Live news</Pill>
         ) : signal.provenance === "clay" ? (
           <Pill tone="warning">Clay simulation</Pill>
         ) : (
@@ -59,7 +61,7 @@ export function SignalCard({
           <span className="truncate font-medium text-ink-soft">{signal.sourceName}</span>
         </span>
         {signal.sourceUrl ? (
-          signal.provenance === "user" || signal.provenance === "public" ? (
+          signal.provenance === "user" || signal.provenance === "public" || signal.provenance === "news" ? (
             <a
               href={signal.sourceUrl}
               target="_blank"
@@ -68,7 +70,9 @@ export function SignalCard({
               title={
                 signal.provenance === "public"
                   ? "Opens the public page read for this snapshot. Not independently audited."
-                  : "Opens the user-supplied URL. Not verified by Aurfy."
+                  : signal.provenance === "news"
+                    ? "Opens the news article link from the live RSS result. The article was not fetched."
+                    : "Opens the user-supplied URL. Not verified by Aurfy."
               }
             >
               <span className="max-w-[15rem] truncate">{signal.sourceUrl.replace(/^https?:\/\//, "")}</span>
@@ -96,7 +100,9 @@ export function SignalCard({
                   ? "No date (simulated)"
                   : signal.provenance === "public"
                     ? "Not stated on page"
-                    : "Not supplied by you"}
+                    : signal.provenance === "news"
+                      ? "Not supplied by feed"
+                      : "Not supplied by you"}
           </dd>
         </div>
         <div>
@@ -129,6 +135,12 @@ export function SignalCard({
           Simulated Clay record. Not real enrichment, a real merchant or a real source.
         </p>
       ) : null}
+      {signal.provenance === "news" ? (
+        <p className="mt-2 rounded-lg border border-accent/40 bg-accent-soft/60 px-2.5 py-1.5 text-[10px] leading-relaxed text-accent-foreground">
+          Live RSS headline, published {signal.sourceDate ? formatDate(signal.sourceDate) : "date not supplied"}. The article body was not
+          fetched or independently verified.
+        </p>
+      ) : null}
       {signal.provenance === "public" ? (
         <p className="mt-2 rounded-lg border border-primary/15 bg-primary-soft/50 px-2.5 py-1.5 text-[10px] leading-relaxed text-secondary-foreground">
           Public page snapshot read on {formatDate(signal.retrievedAt)}. Not independently audited; no payment data is implied.
@@ -159,7 +171,17 @@ export function SignalCard({
           </div>
           <div className="flex flex-wrap items-center gap-1.5">
             <Pill tone={confidenceTone[signal.confidence]}>{signal.confidence} confidence</Pill>
-            <Pill tone={signal.provenance === "public" ? "primary" : signal.provenance === "clay" ? "warning" : "outline"}>
+            <Pill
+              tone={
+                signal.provenance === "public"
+                  ? "primary"
+                  : signal.provenance === "news"
+                    ? "accent"
+                    : signal.provenance === "clay"
+                      ? "warning"
+                      : "outline"
+              }
+            >
               {PROVENANCE_LABEL[signal.provenance]}
             </Pill>
             <Pill tone={statusTone[signal.status]}>{statusLabel[signal.status]}</Pill>

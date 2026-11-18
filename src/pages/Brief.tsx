@@ -358,9 +358,11 @@ export default function Brief() {
                   tone={
                     signal.provenance === "public"
                       ? "primary"
-                      : signal.provenance === "demo" || signal.provenance === "clay"
-                        ? "warning"
-                        : "outline"
+                      : signal.provenance === "news"
+                        ? "accent"
+                        : signal.provenance === "demo" || signal.provenance === "clay"
+                          ? "warning"
+                          : "outline"
                   }
                 >
                   {PROVENANCE_LABEL[signal.provenance]}
@@ -376,9 +378,11 @@ export default function Brief() {
                   ? `Source date ${signal.sourceDate}. `
                   : signal.provenance === "public"
                     ? "No publication date was stated on the public page. "
-                    : signal.provenance === "clay"
-                      ? "Simulated record with no real publication or retrieval date. "
-                      : "No real publication date supplied. "}
+                    : signal.provenance === "news"
+                      ? "No publication date was supplied by the news feed. "
+                      : signal.provenance === "clay"
+                        ? "Simulated record with no real publication or retrieval date. "
+                        : "No real publication date supplied. "}
                 {signal.retrievedAt
                   ? `Read for this snapshot ${formatDateTime(signal.retrievedAt)}. `
                   : signal.provenance === "clay"
