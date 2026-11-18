@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import {
   ArrowDown,
   ArrowRight,
+  Check,
   ExternalLink,
   ListChecks,
   Menu,
@@ -11,6 +12,7 @@ import {
   Plus,
   Radar,
   ShieldCheck,
+  SlidersHorizontal,
   Sparkles,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -35,13 +37,13 @@ type Filter = "all" | "customer" | "peer" | "public" | "clay" | "demo";
 type ViewMode = "stream" | "boards";
 type StreamEntry = { key: string; item: FeedItem; arrivedAt: number; isNewBrand: boolean };
 
-const FILTERS: { id: Filter; label: string }[] = [
-  { id: "all", label: "all" },
-  { id: "customer", label: "customer" },
-  { id: "peer", label: "peer" },
-  { id: "public", label: "public" },
-  { id: "clay", label: "simulated" },
-  { id: "demo", label: "demo" },
+const FILTERS: { id: Filter; label: string; hint: string }[] = [
+  { id: "all", label: "all", hint: "Everything in the universe" },
+  { id: "customer", label: "customer", hint: "What shoppers ask for or struggle with" },
+  { id: "peer", label: "peer", hint: "What comparable brands are doing" },
+  { id: "public", label: "public", hint: "Pages and headlines read from public sites" },
+  { id: "clay", label: "simulated", hint: "Synthetic Clay enrichment" },
+  { id: "demo", label: "demo", hint: "Fictional demo brands" },
 ];
 
 const STARS = Array.from({ length: 86 }, (_, index) => ({
@@ -170,6 +172,7 @@ export default function SignalFeed() {
   const [filter, setFilter] = useState<Filter>("all");
   const [selected, setSelected] = useState<FeedItem | null>(null);
   const [queueOpen, setQueueOpen] = useState(false);
+  const [filterOpen, setFilterOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [playing, setPlaying] = useState(true);
   const [autoScroll, setAutoScroll] = useState(false);
@@ -401,31 +404,15 @@ export default function SignalFeed() {
     <div className="relative flex h-[100dvh] flex-col overflow-hidden bg-cosmos text-primary-foreground">
       <Cosmos />
 
-      <header className="safe-top relative z-30 flex items-center gap-2.5 px-4 pb-2 pt-3 sm:px-6">
+      <header className="safe-top relative z-30 flex items-center gap-2.5 px-4 pb-1 pt-3 sm:px-6">
         <Link to="/" aria-label="Aurfy signal universe" className="flex items-center gap-2 rounded-xl">
           <BrandMark className="h-7 w-7" />
           <span className="flex flex-col leading-none">
             <span className="text-[12px] font-semibold tracking-tight text-primary-foreground">Aurfy</span>
             <span className="font-mono-label mt-0.5 text-[7px] text-primary-foreground/40">signal universe</span>
           </span>
-          <span className="animate-pulse h-1.5 w-1.5 rounded-full bg-accent sm:hidden" aria-hidden="true" />
         </Link>
-        <span className="ml-1 hidden items-center gap-1.5 rounded-full border border-primary-foreground/10 bg-primary-foreground/5 px-2 py-1 text-[8px] font-medium uppercase tracking-[0.14em] text-primary-foreground/45 sm:inline-flex">
-          <span className={cn("h-1.5 w-1.5 rounded-full bg-accent", mode === "stream" && "animate-pulse")} />
-          {mode === "stream" ? "streaming · simulated" : "co-brand boards"}
-        </span>
         <div className="ml-auto flex items-center gap-1">
-          {mode === "stream" ? (
-            <button
-              type="button"
-              onClick={togglePlaying}
-              className="flex h-10 w-10 items-center justify-center rounded-full text-primary-foreground/60 transition hover:bg-primary-foreground/10 hover:text-primary-foreground"
-              aria-label={playing ? "Pause stream" : "Play stream"}
-              title={playing ? "Pause stream" : "Play stream"}
-            >
-              {playing ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
-            </button>
-          ) : null}
           <button
             type="button"
             onClick={() => setMenuOpen(true)}
@@ -437,7 +424,7 @@ export default function SignalFeed() {
         </div>
       </header>
 
-      <div className="relative z-20 flex items-center gap-3 px-4 pb-2 sm:px-6" role="group" aria-label="Homepage view mode and signal filters">
+      <div className="relative z-20 flex items-center gap-2 px-4 pb-3 sm:px-6">
         <div className="flex shrink-0 rounded-full border border-primary-foreground/10 bg-primary-foreground/5 p-0.5">
           <button
             type="button"
@@ -450,7 +437,7 @@ export default function SignalFeed() {
           >
             co-brands
             <span className={cn("rounded-full px-1 text-[8px]", mode === "boards" ? "bg-accent/20 text-accent" : "text-primary-foreground/30")}>
-              {boards.length}
+              {filteredBoards.length}
             </span>
           </button>
           <button
@@ -466,30 +453,37 @@ export default function SignalFeed() {
           </button>
         </div>
 
-        <div className="no-scrollbar flex min-w-0 items-center gap-3 overflow-x-auto" role="group" aria-label="Filter signals and boards">
-          {FILTERS.map((option) => {
-            const active = filter === option.id;
-            return (
-              <button
-                key={option.id}
-                type="button"
-                aria-pressed={active}
-                onClick={() => applyFilter(option.id)}
-                className={cn(
-                  "inline-flex min-h-10 shrink-0 items-center gap-1.5 text-[10px] font-medium tracking-[0.02em] transition",
-                  active ? "text-accent" : "text-primary-foreground/45 hover:text-primary-foreground/75",
-                )}
-              >
-                {active ? <span className="h-1 w-1 rounded-full bg-accent" aria-hidden="true" /> : null}
-                {option.label}
-              </button>
-            );
-          })}
-        </div>
+        <button
+          type="button"
+          onClick={() => setFilterOpen(true)}
+          className={cn(
+            "inline-flex min-h-9 items-center gap-1.5 rounded-full border px-2.5 text-[9.5px] font-semibold transition",
+            filter === "all"
+              ? "border-primary-foreground/10 bg-primary-foreground/5 text-primary-foreground/55 hover:text-primary-foreground"
+              : "border-accent/30 bg-accent/10 text-accent",
+          )}
+          aria-label="Filter signals and boards"
+        >
+          <SlidersHorizontal className="h-3.5 w-3.5" aria-hidden="true" />
+          <span className="hidden sm:inline">{filter === "all" ? "filter" : FILTERS.find((item) => item.id === filter)?.label}</span>
+          <span className="sm:hidden">filter</span>
+          {filter !== "all" ? <span className="h-1 w-1 rounded-full bg-accent" aria-hidden="true" /> : null}
+        </button>
 
-        <span className="ml-auto hidden shrink-0 items-center gap-1.5 text-[8.5px] uppercase tracking-[0.14em] text-primary-foreground/25 md:flex">
-          <Sparkles className="h-3 w-3 text-accent/60" aria-hidden="true" />
-          {mode === "stream" ? "new surfaces arriving" : `${filteredBoards.length} board${filteredBoards.length === 1 ? "" : "s"}${queuedBoards ? ` · ${queuedBoards} queued` : ""}`}
+        {mode === "stream" ? (
+          <button
+            type="button"
+            onClick={togglePlaying}
+            className="flex h-9 w-9 items-center justify-center rounded-full text-primary-foreground/50 transition hover:bg-primary-foreground/10 hover:text-primary-foreground"
+            aria-label={playing ? "Pause stream" : "Play stream"}
+            title={playing ? "Pause stream" : "Play stream"}
+          >
+            {playing ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
+          </button>
+        ) : null}
+
+        <span className="ml-auto hidden items-center gap-1.5 text-[8.5px] uppercase tracking-[0.14em] text-primary-foreground/25 md:flex">
+          {mode === "stream" ? "new surfaces arriving" : "stacked co-brands"}
         </span>
       </div>
 
@@ -664,6 +658,37 @@ export default function SignalFeed() {
           {queued.length}
         </span>
       </button>
+
+      <Dialog open={filterOpen} onOpenChange={setFilterOpen}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Filter the universe</DialogTitle>
+            <DialogDescription>One filter applies to both the board stack and the stream.</DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-1.5">
+            {FILTERS.map((option) => (
+              <button
+                key={option.id}
+                type="button"
+                onClick={() => {
+                  applyFilter(option.id);
+                  setFilterOpen(false);
+                }}
+                className={cn(
+                  "flex min-h-11 items-center justify-between gap-3 rounded-xl border px-3 py-2 text-left transition",
+                  filter === option.id ? "border-primary/40 bg-primary-soft/50" : "border-border bg-card hover:border-primary/30",
+                )}
+              >
+                <span className="min-w-0">
+                  <span className="block text-[12.5px] font-semibold capitalize text-foreground">{option.label}</span>
+                  <span className="mt-0.5 block text-[10.5px] leading-relaxed text-muted-foreground">{option.hint}</span>
+                </span>
+                {filter === option.id ? <Check className="h-4 w-4 shrink-0 text-primary" aria-label="Selected" /> : null}
+              </button>
+            ))}
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Menu */}
       <Dialog open={menuOpen} onOpenChange={setMenuOpen}>

@@ -1,5 +1,4 @@
 import { useRef, useState } from "react";
-import { Link } from "react-router-dom";
 import { ArrowRight, ChevronLeft, ChevronRight, Sparkles } from "lucide-react";
 import type { Capability, ConceptDraft, Merchant, PipelineEntry, Signal } from "@/aurfy/types";
 import { STAGES } from "@/aurfy/content";
@@ -40,13 +39,8 @@ export function BoardGallery({
 
   return (
     <div className="mx-auto w-full max-w-lg px-4 pb-40 pt-3 sm:px-6">
-      <div className="flex items-end justify-between gap-3">
-        <div>
-          <p className="font-mono-label text-[8.5px] text-accent">co-brand boards</p>
-          <p className="mt-1 max-w-md text-[11.5px] leading-relaxed text-primary-foreground/45">
-            The concepts already in orbit, plus queued starts. Flip the stack, then open a board.
-          </p>
-        </div>
+      <div className="flex items-center justify-between gap-3">
+        <p className="font-mono-label text-[8.5px] text-accent">co-brand boards</p>
         <span className="shrink-0 font-mono-label text-[9px] text-primary-foreground/35">
           {total > 0 ? `${String(activeIndex + 1).padStart(2, "0")} / ${String(total).padStart(2, "0")}` : "00 / 00"}
         </span>
@@ -59,12 +53,9 @@ export function BoardGallery({
           <p className="mt-1 max-w-sm text-[11px] leading-relaxed text-primary-foreground/45">
             Queue a signal from the stream, or pull a live company page, to start a co-brand.
           </p>
-          <div className="mt-4 flex flex-wrap justify-center gap-2">
+          <div className="mt-4">
             <Button type="button" className="min-h-10" onClick={onStream}>
               Back to the stream
-            </Button>
-            <Button asChild variant="outline" className="min-h-10">
-              <Link to="/prospects">Pull a live company</Link>
             </Button>
           </div>
         </div>
@@ -78,9 +69,6 @@ export function BoardGallery({
               </span>
               {board.queued ? <Pill tone="accent">Queued</Pill> : null}
             </div>
-            <span className="text-[9px] text-primary-foreground/35">
-              {board.hasConcept ? (board.concept?.reviewed ? "Reviewed" : "Draft") : "Start"}
-            </span>
           </div>
 
           <div
@@ -189,30 +177,9 @@ export function BoardGallery({
               )}
             </div>
 
-            <div className="absolute inset-x-0 top-[30%] z-20 flex -translate-y-1/2 items-center justify-between px-2.5">
-              <button
-                type="button"
-                onClick={() => go(-1)}
-                aria-label="Previous co-brand board"
-                className="flex h-11 w-11 items-center justify-center rounded-full border border-primary-foreground/15 bg-cosmos-soft/85 text-primary-foreground shadow-lift backdrop-blur transition hover:bg-cosmos-soft"
-              >
-                <ChevronLeft className="h-5 w-5" aria-hidden="true" />
-              </button>
-              <button
-                type="button"
-                onClick={() => go(1)}
-                aria-label="Next co-brand board"
-                className="flex h-11 w-11 items-center justify-center rounded-full border border-primary-foreground/15 bg-cosmos-soft/85 text-primary-foreground shadow-lift backdrop-blur transition hover:bg-cosmos-soft"
-              >
-                <ChevronRight className="h-5 w-5" aria-hidden="true" />
-              </button>
-            </div>
           </div>
 
-          <div className="mt-1.5 text-center text-[9px] uppercase tracking-[0.14em] text-primary-foreground/25 sm:hidden">
-            swipe or use the arrows
-          </div>
-          <div className="mt-2 flex items-center justify-between gap-3">
+          <div className="mt-3 flex items-center justify-between gap-2">
             <div className="flex items-center gap-1" role="group" aria-label="Choose a co-brand board">
               {boards.map((item, dotIndex) => (
                 <button
@@ -232,8 +199,28 @@ export function BoardGallery({
                 </button>
               ))}
             </div>
-            <p className="truncate text-right text-[9.5px] text-primary-foreground/35">{board.merchant.name}</p>
+            <div className="flex items-center gap-1">
+              <button
+                type="button"
+                onClick={() => go(-1)}
+                aria-label="Previous co-brand board"
+                className="flex h-9 w-9 items-center justify-center rounded-full border border-primary-foreground/15 bg-primary-foreground/5 text-primary-foreground/70 transition hover:bg-primary-foreground/10 hover:text-primary-foreground"
+              >
+                <ChevronLeft className="h-4 w-4" aria-hidden="true" />
+              </button>
+              <button
+                type="button"
+                onClick={() => go(1)}
+                aria-label="Next co-brand board"
+                className="flex h-9 w-9 items-center justify-center rounded-full border border-primary-foreground/15 bg-primary-foreground/5 text-primary-foreground/70 transition hover:bg-primary-foreground/10 hover:text-primary-foreground"
+              >
+                <ChevronRight className="h-4 w-4" aria-hidden="true" />
+              </button>
+            </div>
           </div>
+          <p className="mt-1.5 text-center text-[8.5px] uppercase tracking-[0.14em] text-primary-foreground/20 sm:hidden">
+            swipe or use the arrows
+          </p>
 
           <Button
             type="button"
@@ -244,24 +231,6 @@ export function BoardGallery({
             <ArrowRight className="h-4 w-4" />
           </Button>
 
-          <div className="mt-3 flex items-center justify-between gap-2 text-[10px]">
-            <button
-              type="button"
-              onClick={onStream}
-              className="inline-flex min-h-8 items-center text-primary-foreground/40 hover:text-primary-foreground/70"
-            >
-              Back to the signal stream
-            </button>
-            <Link to="/prospects" className="inline-flex min-h-8 items-center text-accent">
-              Pull a live company
-            </Link>
-          </div>
-
-          <div className="mt-7 border-t border-primary-foreground/10 pt-4 text-center text-[8.5px] leading-relaxed text-primary-foreground/30">
-            Illustrative concepts · fictional or public demo data · no partnership implied.
-            <br />
-            Public-site logos are used for illustrative discussion only; send-safe boards hide logos and imagery.
-          </div>
         </>
       )}
     </div>
