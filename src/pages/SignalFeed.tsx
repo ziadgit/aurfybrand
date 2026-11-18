@@ -166,7 +166,7 @@ export default function SignalFeed() {
   const navigate = useNavigate();
   const feedRef = useRef<HTMLDivElement>(null);
   const canAutoRef = useRef(false);
-  const [mode, setMode] = useState<ViewMode>("stream");
+  const [mode, setMode] = useState<ViewMode>("boards");
   const [filter, setFilter] = useState<Filter>("all");
   const [selected, setSelected] = useState<FeedItem | null>(null);
   const [queueOpen, setQueueOpen] = useState(false);
@@ -294,6 +294,19 @@ export default function SignalFeed() {
   );
 
   const queuedBoards = boards.filter((board) => board.queued).length;
+
+  const filteredBoards = useMemo(
+    () =>
+      boards.filter((board) => {
+        if (filter === "all") return true;
+        if (filter === "customer" || filter === "peer") return board.signal?.category === filter;
+        if (filter === "public") return board.merchant.recordSource === "public";
+        if (filter === "clay") return board.merchant.recordSource === "clay_simulated";
+        if (filter === "demo") return board.merchant.isDemo;
+        return true;
+      }),
+    [boards, filter],
+  );
 
   const switchMode = (next: ViewMode) => {
     setMode(next);
@@ -428,17 +441,6 @@ export default function SignalFeed() {
         <div className="flex shrink-0 rounded-full border border-primary-foreground/10 bg-primary-foreground/5 p-0.5">
           <button
             type="button"
-            aria-pressed={mode === "stream"}
-            onClick={() => switchMode("stream")}
-            className={cn(
-              "inline-flex min-h-9 items-center gap-1 rounded-full px-2.5 text-[9.5px] font-semibold capitalize transition",
-              mode === "stream" ? "bg-primary-foreground/10 text-primary-foreground" : "text-primary-foreground/40 hover:text-primary-foreground/70",
-            )}
-          >
-            stream
-          </button>
-          <button
-            type="button"
             aria-pressed={mode === "boards"}
             onClick={() => switchMode("boards")}
             className={cn(
@@ -451,38 +453,43 @@ export default function SignalFeed() {
               {boards.length}
             </span>
           </button>
+          <button
+            type="button"
+            aria-pressed={mode === "stream"}
+            onClick={() => switchMode("stream")}
+            className={cn(
+              "inline-flex min-h-9 items-center gap-1 rounded-full px-2.5 text-[9.5px] font-semibold capitalize transition",
+              mode === "stream" ? "bg-primary-foreground/10 text-primary-foreground" : "text-primary-foreground/40 hover:text-primary-foreground/70",
+            )}
+          >
+            stream
+          </button>
         </div>
 
-        {mode === "stream" ? (
-          <div className="no-scrollbar flex min-w-0 items-center gap-3 overflow-x-auto" role="group" aria-label="Filter the signal universe">
-            {FILTERS.map((option) => {
-              const active = filter === option.id;
-              return (
-                <button
-                  key={option.id}
-                  type="button"
-                  aria-pressed={active}
-                  onClick={() => applyFilter(option.id)}
-                  className={cn(
-                    "inline-flex min-h-10 shrink-0 items-center gap-1.5 text-[10px] font-medium tracking-[0.02em] transition",
-                    active ? "text-accent" : "text-primary-foreground/45 hover:text-primary-foreground/75",
-                  )}
-                >
-                  {active ? <span className="h-1 w-1 rounded-full bg-accent" aria-hidden="true" /> : null}
-                  {option.label}
-                </button>
-              );
-            })}
-          </div>
-        ) : (
-          <span className="min-w-0 truncate text-[8.5px] uppercase tracking-[0.14em] text-primary-foreground/35">
-            {boards.length} board{boards.length === 1 ? "" : "s"} · {queuedBoards} queued
-          </span>
-        )}
+        <div className="no-scrollbar flex min-w-0 items-center gap-3 overflow-x-auto" role="group" aria-label="Filter signals and boards">
+          {FILTERS.map((option) => {
+            const active = filter === option.id;
+            return (
+              <button
+                key={option.id}
+                type="button"
+                aria-pressed={active}
+                onClick={() => applyFilter(option.id)}
+                className={cn(
+                  "inline-flex min-h-10 shrink-0 items-center gap-1.5 text-[10px] font-medium tracking-[0.02em] transition",
+                  active ? "text-accent" : "text-primary-foreground/45 hover:text-primary-foreground/75",
+                )}
+              >
+                {active ? <span className="h-1 w-1 rounded-full bg-accent" aria-hidden="true" /> : null}
+                {option.label}
+              </button>
+            );
+          })}
+        </div>
 
         <span className="ml-auto hidden shrink-0 items-center gap-1.5 text-[8.5px] uppercase tracking-[0.14em] text-primary-foreground/25 md:flex">
           <Sparkles className="h-3 w-3 text-accent/60" aria-hidden="true" />
-          {mode === "stream" ? "new surfaces arriving" : "co-brand universe"}
+          {mode === "stream" ? "new surfaces arriving" : `${filteredBoards.length} board${filteredBoards.length === 1 ? "" : "s"}${queuedBoards ? ` · ${queuedBoards} queued` : ""}`}
         </span>
       </div>
 
@@ -627,7 +634,7 @@ export default function SignalFeed() {
           </div>
         </div>
         ) : (
-          <BoardGallery boards={boards} onOpen={openBoard} onStream={() => switchMode("stream")} />
+          <BoardGallery boards={filteredBoards} onOpen={openBoard} onStream={() => switchMode("stream")} />
         )}
       </main>
 

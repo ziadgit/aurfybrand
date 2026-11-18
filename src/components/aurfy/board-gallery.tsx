@@ -30,7 +30,7 @@ export function BoardGallery({
   onStream: () => void;
 }) {
   const [index, setIndex] = useState(0);
-  const touchStart = useRef<{ x: number; y: number } | null>(null);
+  const pointerStart = useRef<{ x: number; y: number } | null>(null);
   const total = boards.length;
   const activeIndex = total > 0 ? ((index % total) + total) % total : 0;
   const board = boards[activeIndex];
@@ -97,20 +97,25 @@ export function BoardGallery({
                 go(-1);
               }
             }}
-            onTouchStart={(event) => {
-              const touch = event.touches[0];
-              touchStart.current = { x: touch.clientX, y: touch.clientY };
+            onPointerDown={(event) => {
+              if (event.pointerType === "mouse" && event.button !== 0) return;
+              if ((event.target as HTMLElement).closest("button, a")) return;
+              pointerStart.current = { x: event.clientX, y: event.clientY };
+              event.currentTarget.setPointerCapture(event.pointerId);
             }}
-            onTouchEnd={(event) => {
-              const start = touchStart.current;
-              touchStart.current = null;
+            onPointerUp={(event) => {
+              const start = pointerStart.current;
+              pointerStart.current = null;
               if (!start) return;
-              const touch = event.changedTouches[0];
-              const dx = touch.clientX - start.x;
-              const dy = touch.clientY - start.y;
-              if (Math.abs(dx) > 48 && Math.abs(dx) > Math.abs(dy)) go(dx < 0 ? 1 : -1);
+              const dx = event.clientX - start.x;
+              const dy = event.clientY - start.y;
+              if (Math.abs(dx) > 42 && Math.abs(dx) > Math.abs(dy)) go(dx < 0 ? 1 : -1);
             }}
-            className="relative mt-1 rounded-[32px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/60 focus-visible:ring-offset-4 focus-visible:ring-offset-cosmos"
+            onPointerCancel={() => {
+              pointerStart.current = null;
+            }}
+            style={{ touchAction: "pan-y" }}
+            className="relative mt-1 cursor-grab rounded-[32px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/60 focus-visible:ring-offset-4 focus-visible:ring-offset-cosmos active:cursor-grabbing"
           >
             <div
               aria-hidden="true"
@@ -204,7 +209,10 @@ export function BoardGallery({
             </div>
           </div>
 
-          <div className="mt-3 flex items-center justify-between gap-3">
+          <div className="mt-1.5 text-center text-[9px] uppercase tracking-[0.14em] text-primary-foreground/25 sm:hidden">
+            swipe or use the arrows
+          </div>
+          <div className="mt-2 flex items-center justify-between gap-3">
             <div className="flex items-center gap-1" role="group" aria-label="Choose a co-brand board">
               {boards.map((item, dotIndex) => (
                 <button
