@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import {
+  ArrowLeft,
   ArrowRight,
   Check,
   ChevronRight,
@@ -57,6 +58,17 @@ export default function Studio() {
 
   return (
     <div className="space-y-5 sm:space-y-6">
+      <div className="flex items-center justify-between gap-2">
+        <Link
+          to="/"
+          className="inline-flex min-h-9 items-center gap-1.5 rounded-full border border-border bg-card px-3 text-[11px] font-semibold text-ink-soft transition hover:border-primary/30 hover:text-primary"
+        >
+          <ArrowLeft className="h-3.5 w-3.5" aria-hidden="true" />
+          Concept deck
+        </Link>
+        <span className="font-mono-label text-[9px] text-muted-foreground">More · how it works</span>
+      </div>
+
       {/* Hero */}
       <section className="aurfy-ink-card aurfy-grain relative overflow-hidden rounded-[26px] px-5 pb-6 pt-5 shadow-lift sm:px-8 sm:pb-8 sm:pt-7">
         <svg

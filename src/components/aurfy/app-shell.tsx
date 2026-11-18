@@ -249,6 +249,7 @@ export function AppShell() {
   const online = useOnline();
   const [menuOpen, setMenuOpen] = useState(false);
   const step = stepForPath(pathname);
+  const isMore = pathname === "/more";
   const stage = STAGES.find((item) => item.id === pipeline.stage);
 
   useEffect(() => {
@@ -257,8 +258,8 @@ export function AppShell() {
   }, [pathname]);
 
   useEffect(() => {
-    document.title = step ? `${step.label} · Aurfy Signal Studio` : "Aurfy Signal Studio";
-  }, [step]);
+    document.title = isMore ? "More · Aurfy Signal Studio" : step ? `${step.label} · Aurfy Signal Studio` : "Aurfy Signal Studio";
+  }, [step, isMore]);
 
   return (
     <div className="aurfy-shell min-h-[100dvh]">
@@ -285,7 +286,21 @@ export function AppShell() {
             <PersistenceBadge />
           </div>
 
-          <nav className="mt-6 min-h-0 flex-1 overflow-y-auto" aria-label="Workflow steps">
+          <NavLink
+            to="/more"
+            end
+            className={({ isActive }) =>
+              cn(
+                "mt-4 flex min-h-10 items-center gap-2 rounded-xl px-2.5 text-[12px] font-semibold transition",
+                isActive ? "bg-primary-soft text-primary" : "text-muted-foreground hover:bg-secondary hover:text-foreground",
+              )
+            }
+          >
+            <Info className="h-4 w-4" aria-hidden="true" />
+            Studio overview
+          </NavLink>
+
+          <nav className="mt-2 min-h-0 flex-1 overflow-y-auto" aria-label="Workflow steps">
             <p className="font-mono-label mb-2 px-2.5 text-[9px] text-muted-foreground">The bounded workflow</p>
             <StepList />
           </nav>
@@ -339,6 +354,26 @@ export function AppShell() {
                     </SheetTitle>
                   </SheetHeader>
                   <div className="mt-4 space-y-4 pb-8">
+                    <div className="grid grid-cols-2 gap-2">
+                      <NavLink
+                        to="/more"
+                        end
+                        onClick={() => setMenuOpen(false)}
+                        className="flex min-h-11 items-center gap-2 rounded-xl border border-border bg-card px-3 text-[11.5px] font-semibold text-foreground"
+                      >
+                        <Info className="h-3.5 w-3.5" aria-hidden="true" />
+                        Overview
+                      </NavLink>
+                      <NavLink
+                        to="/"
+                        end
+                        onClick={() => setMenuOpen(false)}
+                        className="flex min-h-11 items-center gap-2 rounded-xl border border-border bg-card px-3 text-[11.5px] font-semibold text-foreground"
+                      >
+                        <BrandMark className="h-4 w-4" />
+                        Concept deck
+                      </NavLink>
+                    </div>
                     <StepList onNavigate={() => setMenuOpen(false)} />
                     <div className="rounded-2xl border border-border bg-card p-3">
                       <p className="font-mono-label mb-2 text-[9px] text-muted-foreground">Data & app</p>
@@ -367,10 +402,10 @@ export function AppShell() {
           <div className="sticky top-0 z-30 hidden border-b border-border/60 bg-background/80 backdrop-blur lg:block">
             <div className="mx-auto flex h-14 max-w-[1180px] items-center gap-3 px-8">
               <span className="font-mono-label text-[10px] text-muted-foreground">
-                {step ? `Step ${step.step} of 7` : "Studio overview"}
+                {isMore ? "Learn more" : step ? `Step ${step.step} of 7` : "Studio overview"}
               </span>
               <span className="h-3 w-px bg-border" aria-hidden="true" />
-              <span className="text-[13px] font-semibold text-foreground">{step?.label ?? "Signal Studio"}</span>
+              <span className="text-[13px] font-semibold text-foreground">{isMore ? "More" : step?.label ?? "Signal Studio"}</span>
               <div className="ml-auto flex items-center gap-2">
                 <span
                   className={cn(
@@ -431,10 +466,10 @@ export function AppShell() {
         className="safe-bottom fixed inset-x-0 bottom-0 z-40 border-t border-border/70 bg-card/95 px-1 pt-1.5 shadow-float backdrop-blur lg:hidden"
         aria-label="Studio sections"
       >
-        <ul className="mx-auto grid max-w-lg grid-cols-6">
+        <ul className="mx-auto grid max-w-lg grid-cols-5">
           {MOBILE_NAV.map((item) => {
             const Icon = item.icon;
-            const active = item.path === "/" ? pathname === "/" : pathname.startsWith(item.path);
+            const active = pathname.startsWith(item.path);
             return (
               <li key={item.path} className="min-w-0">
                 <NavLink

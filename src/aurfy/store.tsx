@@ -90,6 +90,51 @@ function isWorkspace(value: unknown): value is WorkspaceState {
   );
 }
 
+const DEMO_EXAMPLE_IDS = ["marlow-fen", "halcyon-swim", "fernway-grocers"];
+
+/**
+ * Additive one-time scaffolding for the showcase examples. It only touches the
+ * known demo merchants and only fills concept/positioning data that is still
+ * empty, so manual merchants and real edits are preserved.
+ */
+function backfillDemoExamples(stored: WorkspaceState): WorkspaceState {
+  const seeded = createDemoWorkspace();
+  const concepts = { ...stored.concepts };
+  const positioning = { ...stored.positioning };
+  const signalsByMerchant = { ...stored.signalsByMerchant };
+  let changed = false;
+
+  for (const id of DEMO_EXAMPLE_IDS) {
+    const merchant = stored.merchants.find((item) => item.id === id);
+    if (!merchant?.isDemo) continue;
+    const concept = stored.concepts[id];
+    const position = stored.positioning[id];
+    const seededConcept = seeded.concepts[id];
+    const seededPositioning = seeded.positioning[id];
+    if (!seededConcept || !seededPositioning) continue;
+
+    const emptyConcept = !concept || (!concept.headline?.trim() && !concept.imageUrl);
+    const emptyPositioning = !position || (!position.angle && (position.capabilityIds?.length ?? 0) === 0);
+    if (emptyConcept && emptyPositioning) {
+      concepts[id] = seededConcept;
+      positioning[id] = seededPositioning;
+      const existingSignals = stored.signalsByMerchant[id] ?? [];
+      const untouched = existingSignals.every((signal) => signal.status === "new");
+      if (untouched) signalsByMerchant[id] = seeded.signalsByMerchant[id] ?? existingSignals;
+      changed = true;
+    }
+
+    // The old seed predates optional concept imagery. Add it only when the
+    // field was never present; an explicit null (user removed it) is preserved.
+    if (id === "marlow-fen" && concept && concept.imageUrl === undefined && concept.headline === seededConcept.headline) {
+      concepts[id] = { ...concept, imageUrl: seededConcept.imageUrl };
+      changed = true;
+    }
+  }
+
+  return changed ? { ...stored, concepts, positioning, signalsByMerchant, updatedAt: new Date().toISOString() } : stored;
+}
+
 function loadWorkspace(): WorkspaceState {
   if (typeof window === "undefined") return createDemoWorkspace();
   try {
@@ -100,7 +145,7 @@ function loadWorkspace(): WorkspaceState {
     if (!parsed.merchants.some((merchant) => merchant.id === parsed.activeMerchantId)) {
       parsed.activeMerchantId = parsed.merchants[0].id;
     }
-    return parsed;
+    return backfillDemoExamples(parsed);
   } catch {
     return createDemoWorkspace();
   }

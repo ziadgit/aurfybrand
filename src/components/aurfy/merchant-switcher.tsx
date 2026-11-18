@@ -69,7 +69,7 @@ export function MerchantSwitcher({ compact = false }: { compact?: boolean }) {
                   onClick={() => {
                     setActiveMerchant(item.id);
                     setOpen(false);
-                    navigate("/");
+                    navigate("/more");
                     toast.success(`Now working on ${item.name}`);
                   }}
                   className={cn(

@@ -1,5 +1,5 @@
 import type { LucideIcon } from "lucide-react";
-import { FileText, Home, Layers, ListChecks, Palette, Radar, Send } from "lucide-react";
+import { FileText, Layers, ListChecks, Palette, Radar, Send } from "lucide-react";
 
 export type NavItem = {
   path: string;
@@ -21,7 +21,6 @@ export const WORKFLOW: NavItem[] = [
 ];
 
 export const MOBILE_NAV: NavItem[] = [
-  { path: "/", label: "Studio", short: "Studio", icon: Home },
   { path: "/signals", label: "Signals", short: "Signals", icon: Radar },
   { path: "/brief", label: "Brief", short: "Brief", icon: Layers },
   { path: "/concept", label: "Concept", short: "Concept", icon: Palette },

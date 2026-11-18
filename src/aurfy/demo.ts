@@ -380,7 +380,7 @@ export function createDemoWorkspace(): WorkspaceState {
       url: "https://fernwaygrocers.example",
       category: "Neighbourhood grocer · 2 stores",
       notes:
-        "Fictional demo merchant. Basket sizes are small and the queue matters. No signals selected yet.",
+        "Fictional demo merchant. Basket sizes are small and the queue matters. Demo signals are selected for the example concept; no real research was performed.",
       isDemo: true,
       createdAt: daysAgo(5),
     },
@@ -395,8 +395,18 @@ export function createDemoWorkspace(): WorkspaceState {
       "06": "selected",
       "08": "selected",
     }),
-    "halcyon-swim": freshSignals("halcyon-swim"),
-    "fernway-grocers": freshSignals("fernway-grocers"),
+    "halcyon-swim": statusMapFor("halcyon-swim", {
+      "03": "selected",
+      "06": "selected",
+      "07": "saved",
+      "05": "rejected",
+    }),
+    "fernway-grocers": statusMapFor("fernway-grocers", {
+      "01": "selected",
+      "08": "selected",
+      "09": "saved",
+      "10": "selected",
+    }),
   };
 
   const concepts: Record<string, ConceptDraft> = {
@@ -409,11 +419,41 @@ export function createDemoWorkspace(): WorkspaceState {
       merchantDisplayName: "Marlow & Fen",
       signalId: "sg_marlow-fen_03",
       capabilityId: "cap_payments",
+      imageUrl: "/examples/marlow-fen.jpg",
+      imagePrompt: null,
+      imageGeneratedAt: null,
       reviewed: true,
       updatedAt: now(),
     },
-    "halcyon-swim": emptyConcept("Halcyon Swim"),
-    "fernway-grocers": emptyConcept("Fernway Grocers"),
+    "halcyon-swim": {
+      headline: "Pay your way. Everywhere.",
+      subhead:
+        "One Aurfy checkout across seasonal drops, summer pop-ups and the online store — cards and digital wallets included.",
+      palette: "teal",
+      logoDataUrl: null,
+      merchantDisplayName: "Halcyon Swim",
+      signalId: "sg_halcyon-swim_03",
+      capabilityId: "cap_wallets",
+      imageUrl: "/examples/halcyon-swim.jpg",
+      imagePrompt: null,
+      imageGeneratedAt: null,
+      reviewed: true,
+      updatedAt: now(),
+    },
+    "fernway-grocers": {
+      headline: "One integration. Every checkout.",
+      subhead: "A single Aurfy API keeps the app, two stores and weekend markets on one payments setup.",
+      palette: "citron",
+      logoDataUrl: null,
+      merchantDisplayName: "Fernway Grocers",
+      signalId: "sg_fernway-grocers_10",
+      capabilityId: "cap_api",
+      imageUrl: "/examples/fernway-grocers.jpg",
+      imagePrompt: null,
+      imageGeneratedAt: null,
+      reviewed: true,
+      updatedAt: now(),
+    },
   };
 
   const outreach: Record<string, OutreachDraft> = {
@@ -482,8 +522,20 @@ export function createDemoWorkspace(): WorkspaceState {
       reviewed: true,
       updatedAt: now(),
     },
-    "halcyon-swim": emptyPositioning(),
-    "fernway-grocers": emptyPositioning(),
+    "halcyon-swim": {
+      angle: "choice",
+      capabilityIds: ["cap_wallets", "cap_payments"],
+      capabilities: defaultCapabilities(),
+      reviewed: true,
+      updatedAt: now(),
+    },
+    "fernway-grocers": {
+      angle: "simpler",
+      capabilityIds: ["cap_api"],
+      capabilities: defaultCapabilities(),
+      reviewed: true,
+      updatedAt: now(),
+    },
   };
 
   return {

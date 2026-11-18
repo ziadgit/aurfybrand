@@ -364,8 +364,8 @@ export default function Pipeline() {
           <KanbanSquare className="h-3.5 w-3.5" aria-hidden="true" />
           Due {formatDate(pipeline.dueDate, "not set")} · last local edit {formatDateTime(pipeline.updatedAt)}
         </p>
-        <Link to="/" className="inline-flex items-center gap-1 text-[11px] font-semibold text-primary">
-          Studio home
+        <Link to="/more" className="inline-flex items-center gap-1 text-[11px] font-semibold text-primary">
+          Studio overview
           <ArrowRight className="h-3.5 w-3.5" />
         </Link>
       </div>

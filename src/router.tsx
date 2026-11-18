@@ -1,4 +1,5 @@
 import { AppShell } from "./components/aurfy/app-shell";
+import Showcase from "./pages/Showcase";
 import Studio from "./pages/Studio";
 import Intake from "./pages/Intake";
 import Signals from "./pages/Signals";
@@ -12,9 +13,13 @@ import NotFound from "./pages/NotFound";
 export const routers = [
   {
     path: "/",
+    name: "showcase",
+    element: <Showcase />,
+  },
+  {
     element: <AppShell />,
     children: [
-      { index: true, name: "studio", element: <Studio /> },
+      { path: "more", name: "more", element: <Studio /> },
       { path: "intake", name: "intake", element: <Intake /> },
       { path: "signals", name: "signals", element: <Signals /> },
       { path: "brief", name: "brief", element: <Brief /> },

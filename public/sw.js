@@ -13,6 +13,9 @@ const SHELL_URLS = [
   "/icons/icon-512.png",
   "/icons/maskable-512.png",
   "/icons/apple-touch-icon.png",
+  "/examples/marlow-fen.jpg",
+  "/examples/halcyon-swim.jpg",
+  "/examples/fernway-grocers.jpg",
 ];
 
 self.addEventListener("install", (event) => {
@@ -42,6 +45,7 @@ self.addEventListener("message", (event) => {
 const isAsset = (url) =>
   url.pathname.startsWith("/assets/") ||
   url.pathname.startsWith("/icons/") ||
+  url.pathname.startsWith("/examples/") ||
   url.pathname === "/manifest.webmanifest";
 
 self.addEventListener("fetch", (event) => {
