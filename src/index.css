@@ -27,6 +27,8 @@
     --accent: 73 84% 60%;
     --accent-foreground: 234 30% 13%;
     --accent-soft: 73 70% 90%;
+    --cosmos: 240 50% 3%;
+    --cosmos-soft: 250 36% 8%;
 
     --destructive: 355 68% 45%;
     --destructive-foreground: 0 0% 100%;
@@ -280,4 +282,68 @@
 .animate-deck-in {
   animation: deck-in 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
   transform-origin: center left;
+}
+
+/* Signal universe */
+@keyframes cosmos-twinkle {
+  0%,
+  100% {
+    opacity: 0.15;
+  }
+  50% {
+    opacity: 0.8;
+  }
+}
+
+@keyframes cosmos-drift {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes cosmos-arrive {
+  from {
+    opacity: 0;
+    transform: translateY(14px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes cosmos-shoot {
+  0% {
+    opacity: 0;
+    transform: translate3d(0, 0, 0) rotate(-18deg);
+  }
+  8% {
+    opacity: 0.7;
+  }
+  18% {
+    opacity: 0;
+    transform: translate3d(-26rem, 16rem, 0) rotate(-18deg);
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+.cosmos-star {
+  animation: cosmos-twinkle 5.5s ease-in-out infinite;
+}
+
+.cosmos-orbit {
+  animation: cosmos-drift 90s linear infinite;
+}
+
+.cosmos-arrive {
+  animation: cosmos-arrive 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.cosmos-shoot {
+  animation: cosmos-shoot 16s ease-in-out infinite;
 }

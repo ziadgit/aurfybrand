@@ -40,6 +40,10 @@ export default {
           foreground: "hsl(var(--accent-foreground) / <alpha-value>)",
           soft: "hsl(var(--accent-soft) / <alpha-value>)",
         },
+        cosmos: {
+          DEFAULT: "hsl(var(--cosmos) / <alpha-value>)",
+          soft: "hsl(var(--cosmos-soft) / <alpha-value>)",
+        },
         popover: {
           DEFAULT: "hsl(var(--popover) / <alpha-value>)",
           foreground: "hsl(var(--popover-foreground) / <alpha-value>)",

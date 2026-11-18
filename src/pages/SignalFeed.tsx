@@ -1,12 +1,14 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import {
+  ArrowDown,
   ArrowRight,
-  Check,
   ExternalLink,
   ListChecks,
+  Menu,
   Pause,
   Play,
+  Plus,
   Radar,
   ShieldCheck,
   Sparkles,
@@ -14,10 +16,10 @@ import {
 import { toast } from "sonner";
 import { useStudio } from "@/aurfy/store";
 import { buildFeed, findFeedMerchant, type FeedItem } from "@/aurfy/feed";
-import { ANGLES, CONCEPT_FONTS, CONCEPT_PALETTES } from "@/aurfy/content";
-import { clampText, formatDate, merchantSourceMeta } from "@/aurfy/utils";
+import { ANGLES, CONCEPT_PALETTES } from "@/aurfy/content";
+import { formatDate, hostOf, merchantSourceMeta } from "@/aurfy/utils";
 import { cn } from "@/lib/utils";
-import { BrandLockup, BrandMark } from "@/components/aurfy/brand";
+import { BrandMark } from "@/components/aurfy/brand";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -29,50 +31,153 @@ import {
 import { Pill } from "@/components/aurfy/ui-bits";
 
 type Filter = "all" | "customer" | "peer" | "public" | "clay" | "demo";
+type StreamEntry = { key: string; item: FeedItem; arrivedAt: number; isNewBrand: boolean };
 
 const FILTERS: { id: Filter; label: string }[] = [
-  { id: "all", label: "All signals" },
-  { id: "customer", label: "Customer" },
-  { id: "peer", label: "Peer" },
-  { id: "public", label: "Public" },
-  { id: "clay", label: "Simulated" },
-  { id: "demo", label: "Demo" },
+  { id: "all", label: "all" },
+  { id: "customer", label: "customer" },
+  { id: "peer", label: "peer" },
+  { id: "public", label: "public" },
+  { id: "clay", label: "simulated" },
+  { id: "demo", label: "demo" },
 ];
 
-function sourceDot(item: FeedItem) {
-  if (item.source === "public") return "hsl(73 84% 62%)";
-  if (item.source === "clay") return "hsl(18 78% 64%)";
+const STARS = Array.from({ length: 86 }, (_, index) => ({
+  left: ((index * 47) % 997) / 10,
+  top: ((index * 79 + 17) % 991) / 10,
+  size: index % 13 === 0 ? 2.4 : index % 5 === 0 ? 1.6 : 1,
+  delay: (index % 11) * 0.55,
+  opacity: 0.18 + (index % 5) * 0.1,
+}));
+
+function makeInitial(pool: FeedItem[]): StreamEntry[] {
+  const start = Date.now();
+  const distinct: FeedItem[] = [];
+  const seenBrands = new Set<string>();
+  for (const item of pool) {
+    if (seenBrands.has(item.brand)) continue;
+    seenBrands.add(item.brand);
+    distinct.push(item);
+    if (distinct.length >= 6) break;
+  }
+  const chosen = distinct.length >= 6 ? distinct : pool.slice(0, 6);
+  return chosen.map((item, index) => ({
+    key: `${item.id}_init_${index}`,
+    item,
+    arrivedAt: start - (chosen.length - index) * 42000,
+    isNewBrand: false,
+  }));
+}
+
+function pickNext(pool: FeedItem[], cursor: number, visible: StreamEntry[]) {
+  const visibleBrands = new Set(visible.map((entry) => entry.item.brand));
+  const unseen = pool.filter((item) => !visibleBrands.has(item.brand));
+  const candidates = unseen.length > 0 ? unseen : pool;
+  const recentBrands = new Set(visible.slice(-4).map((entry) => entry.item.brand));
+  for (let offset = 0; offset < candidates.length; offset += 1) {
+    const candidate = candidates[(cursor + offset) % candidates.length];
+    if (!recentBrands.has(candidate.brand) || unseen.length > 0) {
+      return {
+        item: candidate,
+        cursor: (cursor + offset + 1) % candidates.length,
+        isNewBrand: !visibleBrands.has(candidate.brand),
+      };
+    }
+  }
+  const candidate = candidates[cursor % candidates.length];
+  return {
+    item: candidate,
+    cursor: (cursor + 1) % candidates.length,
+    isNewBrand: !visibleBrands.has(candidate.brand),
+  };
+}
+
+function timeAgo(at: number, now: number) {
+  const seconds = Math.max(0, Math.floor((now - at) / 1000));
+  if (seconds < 12) return "just now";
+  if (seconds < 60) return `${seconds}s`;
+  const minutes = Math.floor(seconds / 60);
+  if (minutes < 60) return `${minutes}m`;
+  const hours = Math.floor(minutes / 60);
+  return `${hours}h`;
+}
+
+function sourceDot(source: FeedItem["source"]) {
+  if (source === "public") return "hsl(73 84% 62%)";
+  if (source === "clay") return "hsl(18 78% 64%)";
   return "hsl(36 92% 68%)";
 }
 
-function feedFont(item: FeedItem) {
-  return CONCEPT_FONTS.find((font) => font.id === item.fontId) ?? CONCEPT_FONTS[0];
+function feedHandles(item: FeedItem) {
+  if (item.prospect) return hostOf(item.prospect.url);
+  return item.source === "demo" ? "demo signal" : "simulated record";
 }
 
-function feedPalette(item: FeedItem) {
-  return CONCEPT_PALETTES.find((palette) => palette.id === item.palette) ?? CONCEPT_PALETTES[0];
+function Cosmos() {
+  return (
+    <div aria-hidden="true" className="pointer-events-none absolute inset-0 overflow-hidden">
+      <div
+        className="absolute inset-0"
+        style={{
+          background:
+            "radial-gradient(120% 90% at 78% 8%, hsla(266,70%,40%,0.32) 0%, transparent 55%), radial-gradient(90% 70% at 10% 105%, hsla(178,60%,26%,0.28) 0%, transparent 60%), linear-gradient(180deg, #05050c 0%, #080713 55%, #05050a 100%)",
+        }}
+      />
+      {STARS.map((star, index) => (
+        <span
+          key={index}
+          className="cosmos-star absolute rounded-full bg-primary-foreground"
+          style={{
+            left: `${star.left}%`,
+            top: `${star.top}%`,
+            width: star.size,
+            height: star.size,
+            opacity: star.opacity,
+            animationDelay: `${star.delay}s`,
+          }}
+        />
+      ))}
+      <div
+        className="absolute -right-36 -top-40 h-[30rem] w-[30rem] rounded-full opacity-60 sm:-right-20 sm:-top-48 sm:h-[38rem] sm:w-[38rem]"
+        style={{
+          background: "radial-gradient(circle at 34% 30%, hsl(258 60% 34%) 0%, hsl(258 55% 18%) 42%, hsl(240 50% 7%) 72%)",
+          boxShadow: "inset -40px -30px 80px hsl(240 60% 4% / 0.9), 0 0 90px hsl(258 80% 45% / 0.18)",
+        }}
+      />
+      <div className="cosmos-orbit absolute -right-24 -top-24 h-[24rem] w-[38rem] rounded-[50%] border border-primary-foreground/10 sm:-right-10 sm:-top-20 sm:h-[30rem] sm:w-[48rem]" />
+      <div className="cosmos-orbit absolute -left-40 bottom-[-14rem] h-[30rem] w-[30rem] rounded-full border border-accent/10">
+        <span className="absolute left-1/2 top-0 h-1.5 w-1.5 -translate-x-1/2 rounded-full bg-accent/70" />
+      </div>
+      <div className="cosmos-shoot absolute right-[18%] top-[22%] h-px w-44 bg-gradient-to-r from-transparent via-primary-foreground/40 to-transparent" />
+      <svg className="absolute -bottom-24 -left-24 h-[26rem] w-[26rem] opacity-[0.08]" viewBox="0 0 200 200" fill="none" stroke="hsl(var(--accent))" strokeWidth="1.5">
+        <path d="M30 160a60 60 0 0 1 60-60" />
+        <path d="M30 118a102 102 0 0 1 102 102" />
+        <path d="M30 76a144 144 0 0 1 144 144" />
+      </svg>
+    </div>
+  );
 }
 
 export default function SignalFeed() {
   const { state, queueCoBrand, dequeueCoBrand, setActiveMerchant } = useStudio();
   const navigate = useNavigate();
   const feedRef = useRef<HTMLDivElement>(null);
+  const canAutoRef = useRef(false);
   const [filter, setFilter] = useState<Filter>("all");
   const [selected, setSelected] = useState<FeedItem | null>(null);
   const [queueOpen, setQueueOpen] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
   const [playing, setPlaying] = useState(true);
-  const [hovering, setHovering] = useState(false);
+  const [autoScroll, setAutoScroll] = useState(false);
+  const [focusPaused, setFocusPaused] = useState(false);
+  const [pendingNew, setPendingNew] = useState(0);
+  const [now, setNow] = useState(Date.now());
+  const [stream, setStream] = useState(() => {
+    const pool = buildFeed(state);
+    return { pool, visible: makeInitial(pool), cursor: Math.min(6, pool.length) };
+  });
 
   const items = useMemo(() => buildFeed(state), [state]);
-  const filtered = useMemo(
-    () =>
-      items.filter((item) => {
-        if (filter === "all") return true;
-        if (filter === "customer" || filter === "peer") return item.signal.category === filter;
-        return item.source === filter;
-      }),
-    [items, filter],
-  );
 
   const queued = useMemo(
     () =>
@@ -84,30 +189,67 @@ export default function SignalFeed() {
   );
 
   useEffect(() => {
-    document.title = "Aurfy Signal Studio — Signal stream";
+    document.title = "Aurfy — signal universe";
     window.scrollTo({ top: 0, behavior: "instant" as ScrollBehavior });
     const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    const touch = window.matchMedia("(hover: none)").matches;
-    setPlaying(!reduce && !touch);
+    const hover = window.matchMedia("(hover: hover)").matches;
+    canAutoRef.current = !reduce && hover;
+    setAutoScroll(canAutoRef.current);
   }, []);
 
   useEffect(() => {
-    if (!playing || selected || queueOpen || hovering) return;
+    const tick = window.setInterval(() => setNow(Date.now()), 15000);
+    return () => window.clearInterval(tick);
+  }, []);
+
+  // New surfaces keep arriving from the labeled pool. This is a presentation
+  // simulation, not live social listening.
+  useEffect(() => {
+    if (!playing || selected || queueOpen || menuOpen) return;
+    const timer = window.setInterval(() => {
+      setStream((current) => {
+        if (current.pool.length === 0) return current;
+        const next = pickNext(current.pool, current.cursor, current.visible);
+        const entry: StreamEntry = {
+          key: `${next.item.id}_${Date.now()}`,
+          item: next.item,
+          arrivedAt: Date.now(),
+          isNewBrand: next.isNewBrand,
+        };
+        return {
+          pool: current.pool,
+          cursor: next.cursor,
+          visible: [...current.visible, entry].slice(-16),
+        };
+      });
+      setPendingNew((count) => count + 1);
+    }, 8000);
+    return () => window.clearInterval(timer);
+  }, [playing, selected, queueOpen, menuOpen]);
+
+  useEffect(() => {
+    if (!playing || !autoScroll || selected || queueOpen || menuOpen || focusPaused) return;
     const timer = window.setInterval(() => {
       const element = feedRef.current;
       if (!element) return;
-      if (element.scrollTop + element.clientHeight >= element.scrollHeight - 4) {
-        setPlaying(false);
-        return;
-      }
       element.scrollTop += 1;
     }, 45);
     return () => window.clearInterval(timer);
-  }, [playing, selected, queueOpen, hovering]);
+  }, [playing, autoScroll, selected, queueOpen, menuOpen, focusPaused]);
 
-  useEffect(() => {
+  const applyFilter = (next: Filter) => {
+    setFilter(next);
+    const pool = items.filter((item) => {
+      if (next === "all") return true;
+      if (next === "customer" || next === "peer") return item.signal.category === next;
+      return item.source === next;
+    });
+    setStream({ pool, visible: makeInitial(pool), cursor: Math.min(6, pool.length) });
+    setPendingNew(0);
+    setSelected(null);
+    setQueueOpen(false);
     feedRef.current?.scrollTo({ top: 0, behavior: "auto" });
-  }, [filter]);
+  };
 
   const merchantFor = (item: FeedItem) => findFeedMerchant(state, item);
   const isQueued = (item: FeedItem) => {
@@ -125,10 +267,10 @@ export default function SignalFeed() {
       category: item.category,
       notes:
         item.source === "demo"
-          ? "Queued from the homepage signal stream. Fictional demo signal."
+          ? "Queued from the signal universe. Fictional demo signal."
           : item.source === "clay"
-            ? "Queued from the homepage signal stream. Simulated Clay record; company, enrichment and signals are synthetic."
-            : "Queued from the homepage signal stream. Public snapshot; not independently audited. No partnership implied.",
+            ? "Queued from the signal universe. Simulated Clay record; company, enrichment and signals are synthetic."
+            : "Queued from the signal universe. Public snapshot; not independently audited. No partnership implied.",
       recordSource: item.source === "clay" ? "clay_simulated" : item.source === "public" ? "public" : "demo",
       isDemo: item.source === "demo",
       signalTitle: item.signal.title,
@@ -137,8 +279,9 @@ export default function SignalFeed() {
     setSelected(null);
     setQueueOpen(true);
     setPlaying(false);
+    setAutoScroll(false);
     toast.success(result.created ? `${item.brand} queued for a co-brand` : "Co-brand queue updated", {
-      description: "The selected signal is marked in the workspace. Nothing has been sent or published.",
+      description: "The signal is marked in the workspace. Nothing has been sent or published.",
     });
   };
 
@@ -161,89 +304,67 @@ export default function SignalFeed() {
     toast.success(`${name} removed from the queue`, { description: "The workspace and its signals remain available." });
   };
 
-  return (
-    <div
-      className="relative flex h-[100dvh] flex-col overflow-hidden bg-[hsl(234_30%_8%)] text-primary-foreground"
-      style={{ backgroundImage: "var(--gradient-hero)" }}
-    >
-      <div aria-hidden="true" className="pointer-events-none absolute inset-0 overflow-hidden">
-        <div className="absolute -left-40 top-1/4 h-[30rem] w-[30rem] rounded-full bg-accent/10 blur-3xl" />
-        <div className="absolute -right-40 bottom-0 h-[28rem] w-[28rem] rounded-full bg-primary/40 blur-3xl" />
-        <span className="absolute -bottom-16 left-1/2 -translate-x-1/2 select-none whitespace-nowrap font-display text-[34vw] font-normal leading-none text-primary-foreground/[0.035]">
-          Aurfy
-        </span>
-      </div>
+  const togglePlaying = () => {
+    if (playing) {
+      setPlaying(false);
+      setAutoScroll(false);
+      return;
+    }
+    const element = feedRef.current;
+    if (element && element.scrollTop + element.clientHeight >= element.scrollHeight - 8) {
+      element.scrollTo({ top: 0, behavior: "smooth" });
+    }
+    setPlaying(true);
+    setAutoScroll(canAutoRef.current);
+  };
 
-      <header className="safe-top relative z-30 border-b border-primary-foreground/10 px-4 py-3 sm:px-8">
-        <div className="mx-auto flex w-full max-w-6xl items-center justify-between gap-2">
-          <Link to="/" aria-label="Aurfy Signal Studio home" className="rounded-xl">
-            <BrandLockup compact inverted />
-          </Link>
-          <div className="flex items-center gap-1.5">
-            <Link
-              to="/deck"
-              className="hidden min-h-10 items-center rounded-full border border-primary-foreground/20 bg-primary-foreground/5 px-3 text-[11px] font-semibold text-primary-foreground/85 transition hover:bg-primary-foreground/10 sm:inline-flex"
-            >
-              Deck
-            </Link>
-            <Link
-              to="/more"
-              className="inline-flex min-h-10 items-center rounded-full border border-primary-foreground/20 bg-primary-foreground/5 px-3 text-[11px] font-semibold text-primary-foreground/85 transition hover:bg-primary-foreground/10"
-            >
-              More
-            </Link>
-            <button
-              type="button"
-              onClick={() => {
-                setQueueOpen(true);
-                setPlaying(false);
-              }}
-              className="inline-flex min-h-10 items-center gap-1.5 rounded-full bg-accent px-3 text-[11px] font-semibold text-accent-foreground transition hover:bg-accent/90"
-            >
-              <ListChecks className="h-3.5 w-3.5" aria-hidden="true" />
-              Queue
-              <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-accent-foreground/15 px-1 text-[10px]">
-                {queued.length}
-              </span>
-            </button>
-          </div>
+  const jumpToNew = () => {
+    const element = feedRef.current;
+    if (!element) return;
+    element.scrollTo({ top: element.scrollHeight, behavior: "smooth" });
+    setPendingNew(0);
+  };
+
+  return (
+    <div className="relative flex h-[100dvh] flex-col overflow-hidden bg-cosmos text-primary-foreground">
+      <Cosmos />
+
+      <header className="safe-top relative z-30 flex items-center gap-2.5 px-4 pb-2 pt-3 sm:px-6">
+        <Link to="/" aria-label="Aurfy signal universe" className="flex items-center gap-2 rounded-xl">
+          <BrandMark className="h-7 w-7" />
+          <span className="flex flex-col leading-none">
+            <span className="text-[12px] font-semibold tracking-tight text-primary-foreground">Aurfy</span>
+            <span className="font-mono-label mt-0.5 text-[7px] text-primary-foreground/40">signal universe</span>
+          </span>
+          <span className="animate-pulse h-1.5 w-1.5 rounded-full bg-accent sm:hidden" aria-hidden="true" />
+        </Link>
+        <span className="ml-1 hidden items-center gap-1.5 rounded-full border border-primary-foreground/10 bg-primary-foreground/5 px-2 py-1 text-[8px] font-medium uppercase tracking-[0.14em] text-primary-foreground/45 sm:inline-flex">
+          <span className="animate-pulse h-1.5 w-1.5 rounded-full bg-accent" />
+          streaming · simulated
+        </span>
+        <div className="ml-auto flex items-center gap-1">
+          <button
+            type="button"
+            onClick={togglePlaying}
+            className="flex h-10 w-10 items-center justify-center rounded-full text-primary-foreground/60 transition hover:bg-primary-foreground/10 hover:text-primary-foreground"
+            aria-label={playing ? "Pause stream" : "Play stream"}
+            title={playing ? "Pause stream" : "Play stream"}
+          >
+            {playing ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
+          </button>
+          <button
+            type="button"
+            onClick={() => setMenuOpen(true)}
+            className="flex h-10 w-10 items-center justify-center rounded-full text-primary-foreground/60 transition hover:bg-primary-foreground/10 hover:text-primary-foreground"
+            aria-label="Open Aurfy menu"
+          >
+            <Menu className="h-4 w-4" />
+          </button>
         </div>
       </header>
 
-      <section className="relative z-20 mx-auto w-full max-w-6xl shrink-0 px-4 pt-4 sm:px-8 sm:pt-5">
-        <div className="flex flex-wrap items-end justify-between gap-3">
-          <div className="min-w-0">
-            <p className="font-mono-label text-[9px] text-accent">Signal stream · public + simulated</p>
-            <h1 className="mt-1 font-display text-[26px] leading-[1.02] text-primary-foreground sm:text-[34px]">
-              Brands, between the lines.
-            </h1>
-            <p className="mt-1 max-w-2xl text-[11px] leading-relaxed text-primary-foreground/55">
-              A curated stream of observed merchant signals, not a social feed. Every source is labeled. Tap any line to queue a
-              co-brand.
-            </p>
-          </div>
-          <button
-            type="button"
-            onClick={() => {
-              if (!playing) {
-                const element = feedRef.current;
-                if (element && element.scrollTop + element.clientHeight >= element.scrollHeight - 8) {
-                  element.scrollTo({ top: 0, behavior: "smooth" });
-                }
-                setPlaying(true);
-              } else {
-                setPlaying(false);
-              }
-            }}
-            className="inline-flex min-h-9 items-center gap-1.5 rounded-full border border-primary-foreground/15 bg-primary-foreground/5 px-3 text-[10.5px] font-medium text-primary-foreground/75 transition hover:bg-primary-foreground/10"
-            aria-label={playing ? "Pause auto-scroll" : "Start auto-scroll"}
-          >
-            {playing ? <Pause className="h-3.5 w-3.5" /> : <Play className="h-3.5 w-3.5" />}
-            {playing ? "Pause stream" : "Play stream"}
-          </button>
-        </div>
-
-        <div className="no-scrollbar mt-3 flex gap-1.5 overflow-x-auto pb-2" role="group" aria-label="Filter signal stream">
+      <div className="no-scrollbar relative z-20 flex items-center gap-3 overflow-x-auto px-4 pb-2 sm:px-6" role="group" aria-label="Filter the signal universe">
+        <div className="flex shrink-0 items-center gap-3">
           {FILTERS.map((option) => {
             const active = filter === option.id;
             return (
@@ -251,144 +372,219 @@ export default function SignalFeed() {
                 key={option.id}
                 type="button"
                 aria-pressed={active}
-                onClick={() => setFilter(option.id)}
+                onClick={() => applyFilter(option.id)}
                 className={cn(
-                  "min-h-9 shrink-0 rounded-full border px-3 text-[10.5px] font-semibold transition",
-                  active
-                    ? "border-accent bg-accent text-accent-foreground"
-                    : "border-primary-foreground/15 bg-primary-foreground/5 text-primary-foreground/60 hover:text-primary-foreground",
+                  "inline-flex min-h-10 shrink-0 items-center gap-1.5 text-[10px] font-medium tracking-[0.02em] transition",
+                  active ? "text-accent" : "text-primary-foreground/45 hover:text-primary-foreground/75",
                 )}
               >
+                {active ? <span className="h-1 w-1 rounded-full bg-accent" aria-hidden="true" /> : null}
                 {option.label}
               </button>
             );
           })}
         </div>
-      </section>
+        <span className="ml-auto hidden shrink-0 items-center gap-1.5 text-[8.5px] uppercase tracking-[0.14em] text-primary-foreground/25 md:flex">
+          <Sparkles className="h-3 w-3 text-accent/60" aria-hidden="true" />
+          new surfaces arriving
+        </span>
+      </div>
 
-      <div
+      <main
         ref={feedRef}
         className="no-scrollbar relative z-10 min-h-0 flex-1 overflow-y-auto"
-        onFocusCapture={() => setHovering(true)}
-        onBlurCapture={() => setHovering(false)}
-        onWheel={() => setPlaying(false)}
-        onTouchStart={() => setPlaying(false)}
+        onFocusCapture={() => setFocusPaused(true)}
+        onBlurCapture={() => setFocusPaused(false)}
+        onWheel={() => setAutoScroll(false)}
+        onScroll={() => {
+          const element = feedRef.current;
+          if (element && element.scrollHeight - element.scrollTop - element.clientHeight < 90) {
+            setPendingNew(0);
+          }
+        }}
       >
-        <div className="mx-auto w-full max-w-4xl px-4 pb-20 sm:px-8">
-          {filtered.map((item) => {
-            const font = feedFont(item);
-            const palette = feedPalette(item);
+        <div className="mx-auto w-full max-w-2xl px-4 pb-40 pt-1 sm:px-6">
+          {stream.visible.map((entry) => {
+            const item = entry.item;
+            const palette = CONCEPT_PALETTES.find((option) => option.id === item.palette) ?? CONCEPT_PALETTES[0];
+            const fresh = now - entry.arrivedAt < 16000;
             const queuedItem = isQueued(item);
             return (
-              <button
-                key={item.id}
-                type="button"
-                onClick={() => {
-                  setSelected(item);
-                  setPlaying(false);
-                }}
-                className="group block w-full border-b border-primary-foreground/10 py-6 text-left transition hover:border-accent/40 hover:bg-primary-foreground/[0.035] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/60 sm:py-7"
+              <article
+                key={entry.key}
+                className={cn(
+                  "group relative border-b border-primary-foreground/[0.075] py-5",
+                  fresh && "cosmos-arrive",
+                )}
               >
-                <div className="flex flex-wrap items-center gap-2">
+                <div className="flex items-start gap-3">
                   <span
-                    className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-xl p-1"
-                    style={{ background: "hsl(45 40% 97%)" }}
+                    className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full p-0.5 ring-1 ring-primary-foreground/15"
+                    style={{ background: palette.panel }}
                   >
                     {item.logoUrl ? (
-                      <img src={item.logoUrl} alt="" className="h-full w-full object-contain" />
+                      <img src={item.logoUrl} alt="" className="h-full w-full rounded-full object-contain" />
                     ) : (
-                      <span className="text-[9px] font-bold" style={{ color: "hsl(234 30% 15%)" }}>
+                      <span className="text-[10px] font-bold" style={{ color: palette.ink }}>
                         {item.initials}
                       </span>
                     )}
                   </span>
-                  <span className="text-[13px] font-semibold" style={{ color: palette.accent }}>
-                    {item.brand}
-                  </span>
-                  <span className="inline-flex min-h-7 items-center gap-1.5 rounded-full border border-primary-foreground/15 bg-primary-foreground/5 px-2.5 text-[9px] font-medium text-primary-foreground/65">
-                    <span className="h-1.5 w-1.5 rounded-full" style={{ background: sourceDot(item) }} aria-hidden="true" />
-                    {item.sourceLabel}
-                  </span>
-                  <span className="text-[9px] uppercase tracking-[0.12em] text-primary-foreground/35">{item.categoryLabel}</span>
-                  {queuedItem ? (
-                    <span className="inline-flex min-h-7 items-center gap-1 rounded-full bg-accent px-2.5 text-[9px] font-bold text-accent-foreground">
-                      <Check className="h-3 w-3" aria-hidden="true" />
-                      Queued
-                    </span>
-                  ) : null}
-                </div>
 
-                <p
-                  className="mt-3 max-w-[30ch] text-[24px] leading-[1.06] text-primary-foreground sm:text-[32px]"
-                  style={{ fontFamily: font.stack, fontWeight: font.weight }}
-                >
-                  {item.signal.title}
-                </p>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-center gap-x-1.5 gap-y-0.5">
+                      <span className="text-[13px] font-semibold leading-tight" style={{ color: palette.accent }}>
+                        {item.brand}
+                      </span>
+                      {entry.isNewBrand ? (
+                        <span className="inline-flex items-center gap-1 text-[8.5px] font-semibold text-accent">
+                          <Sparkles className="h-2.5 w-2.5" aria-hidden="true" />
+                          new brand
+                        </span>
+                      ) : null}
+                      <span className="text-[9.5px] text-primary-foreground/40">· {timeAgo(entry.arrivedAt, now)}</span>
+                    </div>
+                    <div className="mt-0.5 flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-[9px] text-primary-foreground/40">
+                      <span className="truncate">{feedHandles(item)}</span>
+                      <span aria-hidden="true">·</span>
+                      <span className="inline-flex items-center gap-1">
+                        <span className="h-1 w-1 rounded-full" style={{ background: sourceDot(item.source) }} aria-hidden="true" />
+                        {item.sourceLabel}
+                      </span>
+                      {queuedItem ? <span className="text-accent/80">· queued</span> : null}
+                    </div>
 
-                <div className="mt-2 flex items-start justify-between gap-4">
-                  <p className="max-w-[58ch] text-[11px] leading-relaxed text-primary-foreground/50">
-                    {clampText(item.signal.whyItMatters, 150)}
-                  </p>
-                  <span className="inline-flex shrink-0 items-center gap-1 text-[10px] font-semibold text-accent opacity-0 transition group-hover:opacity-100 group-focus-visible:opacity-100">
-                    Queue co-brand
-                    <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
-                  </span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSelected(item);
+                        setPlaying(false);
+                        setAutoScroll(false);
+                      }}
+                      className="mt-2 block w-full text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50"
+                    >
+                      <p className="text-[20px] font-medium leading-[1.3] tracking-[-0.01em] text-primary-foreground/90 sm:text-[23px]">
+                        {item.signal.title}
+                      </p>
+                      <p className="mt-1.5 line-clamp-2 max-w-[52ch] text-[11px] leading-relaxed text-primary-foreground/45">
+                        {item.signal.whyItMatters}
+                      </p>
+                    </button>
+
+                    <div className="mt-2 flex flex-wrap items-center gap-3 text-[10px]">
+                      <button
+                        type="button"
+                        onClick={() => queue(item)}
+                        className="inline-flex min-h-10 items-center gap-1 font-semibold text-accent transition hover:text-accent/80"
+                      >
+                        <Plus className="h-3.5 w-3.5" aria-hidden="true" />
+                        Queue co-brand
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSelected(item);
+                          setPlaying(false);
+                          setAutoScroll(false);
+                        }}
+                        className="inline-flex min-h-9 items-center gap-1 text-primary-foreground/40 transition hover:text-primary-foreground/70"
+                      >
+                        Details
+                      </button>
+                      {fresh ? (
+                        <span className="ml-auto inline-flex items-center gap-1 text-[8.5px] uppercase tracking-[0.12em] text-accent/70">
+                          <span className="animate-pulse h-1 w-1 rounded-full bg-accent" aria-hidden="true" />
+                          just arrived
+                        </span>
+                      ) : null}
+                    </div>
+                  </div>
                 </div>
-              </button>
+              </article>
             );
           })}
-          {filtered.length === 0 ? (
-            <div className="py-16 text-center">
-              <p className="font-display text-2xl text-primary-foreground">No signals in this lens.</p>
+          {stream.visible.length === 0 ? (
+            <div className="flex flex-col items-center py-24 text-center">
+              <p className="font-display text-2xl text-primary-foreground">Nothing in this orbit yet.</p>
               <button
                 type="button"
-                onClick={() => setFilter("all")}
-                className="mt-3 inline-flex min-h-10 items-center rounded-full border border-primary-foreground/20 px-4 text-[11px] font-semibold text-primary-foreground/80"
+                onClick={() => applyFilter("all")}
+                className="mt-3 inline-flex min-h-10 items-center rounded-full border border-primary-foreground/15 px-4 text-[11px] font-semibold text-primary-foreground/70"
               >
-                Show all signals
+                Back to all signals
               </button>
             </div>
           ) : null}
-          <div className="flex items-center justify-center gap-2 py-10 text-[10px] text-primary-foreground/35">
-            <ShieldCheck className="h-3.5 w-3.5" aria-hidden="true" />
-            Public snapshots, simulated Clay records and fictional demos are labeled above.
+          <div className="flex flex-col items-center gap-1.5 py-10 text-center text-[9px] leading-relaxed text-primary-foreground/35">
+            <span className="inline-flex items-center gap-1.5">
+              <ShieldCheck className="h-3 w-3" aria-hidden="true" />
+              Public snapshots · simulated Clay · fictional demos
+            </span>
+            <span>Arrival timing and new-brand surfacing are a demo simulation; sources are labeled.</span>
           </div>
         </div>
-      </div>
+      </main>
 
-      <div className="safe-bottom relative z-30 border-t border-primary-foreground/10 bg-[hsl(234_30%_9%)]/90 px-4 py-2.5 backdrop-blur sm:px-8">
-        <div className="mx-auto flex w-full max-w-6xl items-center justify-between gap-3">
-          {queued.length > 0 ? (
-            <button
-              type="button"
-              onClick={() => {
-                setQueueOpen(true);
-                setPlaying(false);
-              }}
-              className="flex min-h-11 w-full items-center justify-between gap-3 rounded-full bg-accent px-4 text-left text-accent-foreground transition hover:bg-accent/90"
-            >
-              <span className="flex min-w-0 items-center gap-2">
-                <ListChecks className="h-4 w-4 shrink-0" aria-hidden="true" />
-                <span className="truncate text-[12px] font-semibold">
-                  {queued.length} co-brand{queued.length === 1 ? "" : "s"} queued
-                </span>
-                <span className="hidden truncate text-[10px] opacity-65 sm:block">Review and open the queue</span>
-              </span>
-              <ArrowRight className="h-4 w-4 shrink-0" aria-hidden="true" />
-            </button>
-          ) : (
-            <div className="flex min-h-11 w-full items-center justify-between gap-2 text-[10.5px] text-primary-foreground/50">
-              <span className="flex items-center gap-1.5">
-                <Sparkles className="h-3.5 w-3.5 text-accent" aria-hidden="true" />
-                Tap a signal to queue a co-brand.
-              </span>
-              <span className="hidden sm:inline">Queueing creates a local workspace; nothing is sent.</span>
-            </div>
-          )}
-        </div>
-      </div>
+      {pendingNew > 0 ? (
+        <button
+          type="button"
+          onClick={jumpToNew}
+          className="fixed bottom-[calc(5.6rem+env(safe-area-inset-bottom,0px))] left-1/2 z-40 inline-flex min-h-11 -translate-x-1/2 items-center gap-1.5 rounded-full border border-accent/30 bg-cosmos-soft/90 px-3.5 text-[10.5px] font-semibold text-accent shadow-lift backdrop-blur"
+        >
+          <ArrowDown className="h-3.5 w-3.5" aria-hidden="true" />
+          {pendingNew} new signal{pendingNew === 1 ? "" : "s"}
+        </button>
+      ) : null}
 
-      {/* Signal detail + queue action */}
+      <button
+        type="button"
+        onClick={() => {
+          setQueueOpen(true);
+          setPlaying(false);
+          setAutoScroll(false);
+        }}
+        className="fixed bottom-[calc(1rem+env(safe-area-inset-bottom,0px))] right-4 z-40 inline-flex min-h-12 items-center gap-2 rounded-full bg-accent px-4 text-accent-foreground shadow-lift transition hover:bg-accent/90"
+      >
+        <ListChecks className="h-4 w-4" aria-hidden="true" />
+        <span className="text-[11px] font-bold">Queue</span>
+        <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-accent-foreground/15 px-1 text-[10px]">
+          {queued.length}
+        </span>
+      </button>
+
+      {/* Menu */}
+      <Dialog open={menuOpen} onOpenChange={setMenuOpen}>
+        <DialogContent className="sm:max-w-xs">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <BrandMark className="h-6 w-6" /> Aurfy
+            </DialogTitle>
+            <DialogDescription>Signal universe and studio</DialogDescription>
+          </DialogHeader>
+          <nav className="grid gap-1.5">
+            {[
+              { to: "/deck", label: "Concept deck" },
+              { to: "/prospects", label: "Prospect engine" },
+              { to: "/more", label: "Studio overview" },
+            ].map((link) => (
+              <Link
+                key={link.to}
+                to={link.to}
+                onClick={() => setMenuOpen(false)}
+                className="flex min-h-11 items-center justify-between rounded-xl border border-border bg-card px-3 text-[12px] font-semibold text-foreground"
+              >
+                {link.label}
+                <ArrowRight className="h-3.5 w-3.5 text-muted-foreground" aria-hidden="true" />
+              </Link>
+            ))}
+          </nav>
+          <p className="text-[10px] leading-relaxed text-muted-foreground">
+            Arrivals are simulated. Public snapshots, Clay simulations and fictional demos are labeled in the stream.
+          </p>
+        </DialogContent>
+      </Dialog>
+
+      {/* Signal detail */}
       <Dialog open={Boolean(selected)} onOpenChange={(open) => !open && setSelected(null)}>
         <DialogContent className="max-h-[88dvh] overflow-y-auto sm:max-w-lg">
           {selected ? (
@@ -396,15 +592,13 @@ export default function SignalFeed() {
               <DialogHeader>
                 <div className="flex flex-wrap items-center gap-2">
                   <span
-                    className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-xl p-1"
-                    style={{ background: "hsl(45 40% 97%)" }}
+                    className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-full p-0.5 ring-1 ring-border"
+                    style={{ background: (CONCEPT_PALETTES.find((p) => p.id === selected.palette) ?? CONCEPT_PALETTES[0]).panel }}
                   >
                     {selected.logoUrl ? (
-                      <img src={selected.logoUrl} alt="" className="h-full w-full object-contain" />
+                      <img src={selected.logoUrl} alt="" className="h-full w-full rounded-full object-contain" />
                     ) : (
-                      <span className="text-[10px] font-bold" style={{ color: "hsl(234 30% 15%)" }}>
-                        {selected.initials}
-                      </span>
+                      <span className="text-[10px] font-bold text-primary-foreground">{selected.initials}</span>
                     )}
                   </span>
                   <div>
@@ -489,7 +683,7 @@ export default function SignalFeed() {
         </DialogContent>
       </Dialog>
 
-      {/* Co-brand queue */}
+      {/* Queue */}
       <Dialog open={queueOpen} onOpenChange={setQueueOpen}>
         <DialogContent className="max-h-[88dvh] overflow-y-auto sm:max-w-md">
           <DialogHeader>
