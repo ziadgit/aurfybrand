@@ -322,8 +322,8 @@ export default function Studio() {
           “Illustrative concept for discussion. No partnership implied.”
         </TruthNote>
         <TruthNote tone="info" title="AI is optional and labeled" icon={Sparkles}>
-          Brief and outreach drafting can use connected server-side AI. When it fails or you are offline, a deterministic template
-          is applied instead and the draft is labeled accordingly. Nothing pretends AI wrote a template.
+          Brief and outreach drafting can use connected server-side AI, and the concept can generate optional artwork. AI text falls
+          back to a labeled template; generated visuals are always labeled illustrative. Nothing pretends AI wrote a template.
         </TruthNote>
         <TruthNote tone="info" title="Offline & install" icon={CloudOff}>
           The production build ships a manifest, icons and a service worker for the app shell. Offline only restores saved work and

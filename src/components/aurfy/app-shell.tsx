@@ -358,7 +358,7 @@ export function AppShell() {
             {!online ? (
               <div className="flex items-center gap-2 border-t border-warning/25 bg-warning-soft px-3 py-2 text-[11px] font-medium text-warning" role="status">
                 <CloudOff className="h-3.5 w-3.5" />
-                Offline — showing cached shell and this device&apos;s saved work. No new signals or AI drafts.
+                Offline — showing cached shell and this device&apos;s saved work. No new signals, AI drafts or generated visuals.
               </div>
             ) : null}
           </header>
@@ -391,8 +391,8 @@ export function AppShell() {
               <div className="mb-4 flex items-start gap-2.5 rounded-2xl border border-warning/30 bg-warning-soft p-3 text-[12px] leading-relaxed text-warning lg:hidden">
                 <CloudOff className="mt-0.5 h-4 w-4 shrink-0" />
                 <span>
-                  You&apos;re offline. Saved work and the app shell remain available. Signals are not refreshed and AI-assisted
-                  drafting is unavailable until you reconnect.
+                  You&apos;re offline. Saved work and the app shell remain available. Signals are not refreshed and AI drafting or
+                  image generation is unavailable until you reconnect.
                 </span>
               </div>
             ) : null}

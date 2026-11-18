@@ -1,14 +1,16 @@
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import {
   ArrowRight,
   Check,
+  ChevronDown,
   Copy,
   ImagePlus,
   Layers,
+  Loader2,
   Palette,
-  RefreshCw,
   ShieldCheck,
+  Sparkles,
   Trash2,
   TriangleAlert,
   Upload,
@@ -18,7 +20,9 @@ import { toast } from "sonner";
 import { useStudio } from "@/aurfy/store";
 import { ANGLES, CONCEPT_PALETTES } from "@/aurfy/content";
 import { templateConcept } from "@/aurfy/draft";
-import { resizeImageFile } from "@/aurfy/utils";
+import { useOnline } from "@/aurfy/use-online";
+import { useConceptVisual } from "@/aurfy/use-concept-visual";
+import { formatDateTime, resizeImageFile } from "@/aurfy/utils";
 import { cn } from "@/lib/utils";
 import { PageHeader } from "@/components/aurfy/page-header";
 import { BrandMark } from "@/components/aurfy/brand";
@@ -34,7 +38,13 @@ export default function Concept() {
   const { merchant, selectedSignals, positioning, concept, pipeline, updateConcept, setStage, updatePipeline, capabilityById } = useStudio();
   const fileRef = useRef<HTMLInputElement>(null);
   const [logoBusy, setLogoBusy] = useState(false);
-  const [editingCopy, setEditingCopy] = useState(false);
+  const [imageLoadError, setImageLoadError] = useState(false);
+  const online = useOnline();
+  const visual = useConceptVisual();
+
+  useEffect(() => {
+    setImageLoadError(false);
+  }, [concept.imageUrl]);
   const palette = CONCEPT_PALETTES.find((item) => item.id === concept.palette) ?? CONCEPT_PALETTES[0];
   const angle = ANGLES.find((item) => item.id === positioning.angle);
   const signal = selectedSignals.find((item) => item.id === concept.signalId);
@@ -52,6 +62,7 @@ export default function Concept() {
         `Grounding signal: ${signal?.title ?? "No signal chosen"}`,
         signal ? `Signal provenance: ${signal.provenance === "demo" ? "Fictional demo signal" : "User-supplied, unverified"}` : "",
         `Approved capability: ${capability?.statement ?? "No capability chosen"}`,
+        `Visual: ${concept.imageUrl ? "AI-generated illustrative artwork (not a logo or partnership asset)" : "No generated visual"}`,
         "",
         FOOTER,
       ]
@@ -75,6 +86,33 @@ export default function Concept() {
       setLogoBusy(false);
       if (fileRef.current) fileRef.current.value = "";
     }
+  };
+
+  const generateVisual = async () => {
+    if (!concept.headline.trim()) {
+      toast.error("Add a headline first", { description: "The visual is built from the concept, so it needs a short headline." });
+      return;
+    }
+    const result = await visual.generate({
+      headline: concept.headline,
+      subhead: concept.subhead,
+      merchantName: concept.merchantDisplayName || merchant.name,
+      category: merchant.category,
+      angle: angle?.label ?? "",
+      palette: concept.palette,
+    });
+    if (!result.ok) {
+      toast.error("Visual not generated", { description: result.reason });
+      return;
+    }
+    updateConcept({
+      imageUrl: result.url,
+      imagePrompt: result.prompt,
+      imageGeneratedAt: new Date().toISOString(),
+    });
+    toast.success("Illustrative visual generated", {
+      description: "Seedream 5 artwork. Labeled illustrative; no logo, readable text or partnership is implied.",
+    });
   };
 
   const generateCopy = () => {
@@ -118,7 +156,8 @@ export default function Concept() {
 
       <TruthNote tone="safety" title="Not a real partnership or a live product" icon={ShieldCheck}>
         This is a designerly conversation aid, not a partnership asset. It does not promise a launch, commercial terms, a merchant
-        endorsement or a specific implementation.
+        endorsement or a specific implementation. Any AI-generated visual is illustrative and must not be presented as an official
+        asset.
       </TruthNote>
 
       <div className="grid gap-5 lg:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)] lg:items-start">
@@ -130,6 +169,33 @@ export default function Concept() {
               style={{ background: palette.panel, color: palette.ink }}
               aria-label="Illustrative co-branded concept preview"
             >
+              {concept.imageUrl && !imageLoadError ? (
+                <div className="relative -mx-5 -mt-5 mb-4 sm:-mx-6 sm:-mt-6">
+                  <div className="relative aspect-[4/3] w-full overflow-hidden">
+                    <img
+                      src={concept.imageUrl}
+                      alt={`AI-generated illustrative concept artwork for ${concept.merchantDisplayName || merchant.name}; not a real partnership.`}
+                      className="h-full w-full object-cover"
+                      loading="lazy"
+                      decoding="async"
+                      onError={() => setImageLoadError(true)}
+                    />
+                    <div
+                      className="absolute inset-0"
+                      style={{ background: "linear-gradient(180deg, rgba(9,9,18,0.34) 0%, rgba(9,9,18,0) 38%, rgba(9,9,18,0.5) 100%)" }}
+                      aria-hidden="true"
+                    />
+                    <span className="aurfy-chip absolute left-3 top-3 border-0 bg-background/90 text-[9px] text-foreground backdrop-blur">
+                      AI visual · illustrative
+                    </span>
+                    <span className="absolute bottom-3 left-3 rounded-full bg-background/90 px-2.5 py-1 text-[8.5px] font-medium text-foreground backdrop-blur">
+                      No partnership implied
+                    </span>
+                  </div>
+                </div>
+              ) : null}
+
+              {!concept.imageUrl || imageLoadError ? (
               <svg className="pointer-events-none absolute -right-10 -top-10 h-44 w-44 opacity-20" viewBox="0 0 200 200" aria-hidden="true">
                 <g fill="none" stroke={palette.accent} strokeWidth="5" strokeLinecap="round">
                   <path d="M30 150a60 60 0 0 1 60-60" />
@@ -137,6 +203,7 @@ export default function Concept() {
                   <path d="M30 70a140 140 0 0 1 140 140" />
                 </g>
               </svg>
+              ) : null}
 
               <div className="relative flex items-start justify-between gap-3">
                 <span className="font-mono-label rounded-full px-2.5 py-1 text-[8.5px]" style={{ background: palette.accent, color: "hsl(234 30% 13%)" }}>
@@ -259,7 +326,7 @@ export default function Concept() {
                   maxLength={64}
                   onChange={(event) => updateConcept({ headline: event.target.value })}
                   className="aurfy-input mt-2 font-display text-lg"
-                  placeholder="One wallet. Every counter."
+                  placeholder="One payment layer. Every counter."
                 />
               </div>
 
@@ -429,6 +496,126 @@ export default function Concept() {
           </section>
 
           <section className="surface p-4 sm:p-5">
+            <SectionHeading
+              eyebrow="Illustrative visual"
+              title="Optional AI artwork"
+              description="Generate a presentation mood image from this concept. It is illustrative only — never a merchant logo, official asset or proof of partnership."
+            />
+
+            <div className="mt-3 flex flex-wrap items-center gap-1.5">
+              <Pill tone="primary" icon={Sparkles}>
+                Seedream 5
+              </Pill>
+              <Pill tone="outline">4:3 · 2K</Pill>
+              <Pill tone="outline">Uses AI credits</Pill>
+            </div>
+
+            <p className="mt-2 text-[11px] leading-relaxed text-muted-foreground">
+              Sends the display name, category, headline, supporting line, angle and palette. It does not send selected signal text or
+              any pasted source. The backend requests no text, logos, trademarks or partnership marks.
+            </p>
+
+            <div className="mt-4 flex flex-col gap-2 sm:flex-row">
+              <Button
+                type="button"
+                className="tap min-h-11"
+                onClick={generateVisual}
+                disabled={!online || visual.isGenerating || !concept.headline.trim()}
+                aria-busy={visual.isGenerating}
+              >
+                {visual.isGenerating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
+                {visual.phase === "submitting"
+                  ? "Starting…"
+                  : visual.phase === "polling"
+                    ? "Generating visual…"
+                    : concept.imageUrl
+                      ? "Regenerate visual"
+                      : "Generate visual"}
+              </Button>
+              {concept.imageUrl ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    updateConcept({ imageUrl: null, imagePrompt: null, imageGeneratedAt: null });
+                    toast.success("Generated visual removed", { description: "The concept card has returned to the typographic treatment." });
+                  }}
+                  className="tap min-h-11 border border-input bg-card px-4 text-muted-foreground hover:text-destructive"
+                >
+                  <Trash2 className="h-4 w-4" />
+                  Remove visual
+                </button>
+              ) : null}
+            </div>
+
+            {!online ? (
+              <p className="mt-2 flex items-start gap-1.5 text-[11px] leading-relaxed text-warning">
+                <TriangleAlert className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+                You are offline. Generating a visual needs a connection; existing visuals already saved on this device still display.
+              </p>
+            ) : null}
+
+            {!concept.headline.trim() ? (
+              <p className="mt-2 text-[11px] text-muted-foreground">Add a headline above before generating artwork.</p>
+            ) : null}
+
+            {visual.isGenerating ? (
+              <div className="mt-3" role="status" aria-live="polite">
+                <div className="h-1.5 overflow-hidden rounded-full bg-muted">
+                  <div className="h-full w-1/3 animate-pulse rounded-full bg-primary" />
+                </div>
+                <p className="mt-1.5 text-[10.5px] leading-relaxed text-muted-foreground">
+                  Usually 30–90 seconds. You can keep editing; the visual uses the copy from when you started.
+                </p>
+              </div>
+            ) : null}
+
+            {visual.error ? (
+              <div
+                role="alert"
+                className="mt-3 flex items-start gap-2 rounded-xl border border-destructive/25 bg-destructive/5 p-3 text-[11px] leading-relaxed text-destructive"
+              >
+                <TriangleAlert className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+                <span>{visual.error}</span>
+              </div>
+            ) : null}
+
+            {imageLoadError && concept.imageUrl ? (
+              <p className="mt-3 rounded-xl border border-warning/25 bg-warning-soft/60 p-3 text-[11px] leading-relaxed text-warning">
+                The saved visual URL could not be loaded — it may have expired. Regenerate or remove it.
+              </p>
+            ) : null}
+
+            {concept.imageUrl && !imageLoadError ? (
+              <div className="mt-3 rounded-xl border border-border bg-muted/40 p-3">
+                <p className="flex flex-wrap items-center gap-1.5 text-[10.5px] leading-relaxed text-muted-foreground">
+                  <Pill tone="primary">AI-generated · illustrative</Pill>
+                  Shown in the card preview. Regenerating replaces it and clears the review flag.
+                </p>
+                {concept.imagePrompt ? (
+                  <details className="group mt-2 border-t border-border/70 pt-2">
+                    <summary className="flex min-h-8 cursor-pointer list-none items-center justify-between text-[10.5px] font-semibold text-ink-soft [&::-webkit-details-marker]:hidden">
+                      Prompt sent to the image model
+                      <ChevronDown className="h-3.5 w-3.5 transition group-open:rotate-180" aria-hidden="true" />
+                    </summary>
+                    <p className="mt-1.5 max-h-40 overflow-y-auto whitespace-pre-wrap text-[10px] leading-relaxed text-muted-foreground">
+                      {concept.imagePrompt}
+                    </p>
+                    {concept.imageGeneratedAt ? (
+                      <p className="mt-1 text-[10px] text-muted-foreground">Generated {formatDateTime(concept.imageGeneratedAt)}</p>
+                    ) : null}
+                  </details>
+                ) : null}
+              </div>
+            ) : null}
+
+            <p className="mt-3 flex items-start gap-1.5 text-[10px] leading-relaxed text-muted-foreground">
+              <ShieldCheck className="mt-0.5 h-3 w-3 shrink-0" aria-hidden="true" />
+              The prompt forbids text, logos and trademarked identity, but image models can still add artefacts. Inspect every result before
+              using it.
+            </p>
+          </section>
+
+          <section className="surface p-4 sm:p-5">
             <SectionHeading eyebrow="Review & next action" title="A human decides" description="The concept stays a draft until someone confirms the wording and framing." />
             <div className="mt-4 space-y-3">
               <ReviewToggle
@@ -438,7 +625,7 @@ export default function Concept() {
                   if (value) toast.success("Concept marked reviewed", { description: "You can still edit; further edits clear the review flag." });
                 }}
                 title="I reviewed this illustrative concept"
-                description="The footer is intact, the signal provenance is visible, and no partnership or unapproved feature is implied."
+                description="The footer is intact, any generated visual is labeled illustrative, signal provenance is visible, and no partnership or unapproved feature is implied."
               />
 
               {!concept.reviewed || !concept.signalId || !concept.capabilityId ? (
@@ -510,8 +697,8 @@ export default function Concept() {
       </div>
 
       <p className="flex items-start gap-1.5 text-[10.5px] leading-relaxed text-muted-foreground">
-        <RefreshCw className="mt-0.5 h-3 w-3 shrink-0" aria-hidden="true" />
-        Template suggestions are deterministic. No AI-generated image, logo or brand asset is created here.
+        <Sparkles className="mt-0.5 h-3 w-3 shrink-0" aria-hidden="true" />
+        Template copy is deterministic. The optional visual is AI-generated with Seedream 5 and labeled; no merchant logo or official brand asset is synthesized.
       </p>
     </div>
   );

@@ -306,6 +306,9 @@ export function emptyConcept(merchantName: string): ConceptDraft {
     merchantDisplayName: merchantName,
     signalId: null,
     capabilityId: null,
+    imageUrl: null,
+    imagePrompt: null,
+    imageGeneratedAt: null,
     reviewed: false,
     updatedAt: now(),
   };

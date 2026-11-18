@@ -75,6 +75,10 @@ export type ConceptDraft = {
   merchantDisplayName: string;
   signalId: string | null;
   capabilityId: string | null;
+  /** Optional AI-generated illustrative artwork; never a logo or official asset. */
+  imageUrl?: string | null;
+  imagePrompt?: string | null;
+  imageGeneratedAt?: string | null;
   reviewed: boolean;
   updatedAt: string;
 };
