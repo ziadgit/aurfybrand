@@ -14,6 +14,7 @@ import { EmptyState, Pill, TruthNote } from "@/components/aurfy/ui-bits";
 type CategoryFilter = "all" | SignalCategory;
 type StatusFilter = "all" | SignalStatus;
 type ConfidenceFilter = "all" | Confidence;
+type ProvenanceFilter = "all" | "public" | "clay" | "demo" | "user";
 
 const STATUS_OPTIONS: { value: StatusFilter; label: string }[] = [
   { value: "all", label: "All statuses" },
@@ -30,12 +31,21 @@ const CONFIDENCE_OPTIONS: { value: ConfidenceFilter; label: string }[] = [
   { value: "high", label: "High" },
 ];
 
+const PROVENANCE_OPTIONS: { value: ProvenanceFilter; label: string }[] = [
+  { value: "all", label: "All sources" },
+  { value: "public", label: "Public snapshot" },
+  { value: "clay", label: "Clay simulation" },
+  { value: "demo", label: "Demo library" },
+  { value: "user", label: "Pasted by you" },
+];
+
 export default function Signals() {
   const { signals, selectedSignals, setSignalStatus, loadDemoSignals, merchant } = useStudio();
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState<CategoryFilter>("all");
   const [status, setStatus] = useState<StatusFilter>("all");
   const [confidence, setConfidence] = useState<ConfidenceFilter>("all");
+  const [provenance, setProvenance] = useState<ProvenanceFilter>("all");
 
   const customerAll = signals.filter((signal) => signal.category === "customer").length;
   const peerAll = signals.filter((signal) => signal.category === "peer").length;
@@ -48,19 +58,21 @@ export default function Signals() {
       if (category !== "all" && signal.category !== category) return false;
       if (status !== "all" && signal.status !== status) return false;
       if (confidence !== "all" && signal.confidence !== confidence) return false;
+      if (provenance !== "all" && signal.provenance !== provenance) return false;
       if (!q) return true;
       return [signal.title, signal.sourceName, signal.evidence, signal.question, ...signal.tags]
         .join(" ")
         .toLowerCase()
         .includes(q);
     });
-  }, [signals, category, status, confidence, query]);
+  }, [signals, category, status, confidence, provenance, query]);
 
-  const hasFilters = category !== "all" || status !== "all" || confidence !== "all" || query.trim().length > 0;
+  const hasFilters = category !== "all" || status !== "all" || confidence !== "all" || provenance !== "all" || query.trim().length > 0;
   const clearFilters = () => {
     setCategory("all");
     setStatus("all");
     setConfidence("all");
+    setProvenance("all");
     setQuery("");
   };
 
@@ -79,8 +91,9 @@ export default function Signals() {
       />
 
       <TruthNote tone="demo" title="No live research is connected">
-        {DEMO_LIBRARY_NOTE} User-pasted text is labeled and never fetched or verified. This app has no LinkedIn, social or news feed
-        access, so it never implies fresh retrieval — online or offline.
+        {DEMO_LIBRARY_NOTE} User-pasted text is labeled and never fetched. Signals added from the prospect engine keep their own source
+        labels: public snapshots cite the page read on 18 Nov 2026, while Clay records are synthetic. There is no live LinkedIn, social
+        or news feed access.
       </TruthNote>
 
       {!merchant.isDemo && signals.length === 0 ? (
@@ -162,7 +175,7 @@ export default function Signals() {
                   ))}
                 </div>
 
-                <div className="mt-3 grid grid-cols-2 gap-2">
+                <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3">
                   <div>
                     <label htmlFor="filter-status" className="font-mono-label mb-1.5 flex items-center gap-1 text-[9px] text-muted-foreground">
                       <Filter className="h-3 w-3" aria-hidden="true" />
@@ -175,6 +188,24 @@ export default function Signals() {
                       className="aurfy-input h-11 min-h-11 py-2 pr-8 text-[13px]"
                     >
                       {STATUS_OPTIONS.map((option) => (
+                        <option key={option.value} value={option.value}>
+                          {option.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label htmlFor="filter-provider" className="font-mono-label mb-1.5 flex items-center gap-1 text-[9px] text-muted-foreground">
+                      <Radar className="h-3 w-3" aria-hidden="true" />
+                      Source
+                    </label>
+                    <select
+                      id="filter-provider"
+                      value={provenance}
+                      onChange={(event) => setProvenance(event.target.value as ProvenanceFilter)}
+                      className="aurfy-input col-span-2 h-11 min-h-11 py-2 pr-8 text-[13px] sm:col-span-1"
+                    >
+                      {PROVENANCE_OPTIONS.map((option) => (
                         <option key={option.value} value={option.value}>
                           {option.label}
                         </option>

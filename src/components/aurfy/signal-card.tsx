@@ -1,6 +1,6 @@
 import { Bookmark, Check, ChevronDown, ExternalLink, Link2, MessageSquareQuote, ThumbsDown, TriangleAlert } from "lucide-react";
 import type { Signal, SignalStatus } from "@/aurfy/types";
-import { CATEGORY_LABEL, formatDate } from "@/aurfy/utils";
+import { CATEGORY_LABEL, PROVENANCE_LABEL, formatDate } from "@/aurfy/utils";
 import { cn } from "@/lib/utils";
 import { Pill } from "./ui-bits";
 
@@ -39,6 +39,10 @@ export function SignalCard({
           <Pill tone="warning" icon={TriangleAlert}>
             Demo · fictional
           </Pill>
+        ) : signal.provenance === "public" ? (
+          <Pill tone="primary">Public snapshot</Pill>
+        ) : signal.provenance === "clay" ? (
+          <Pill tone="warning">Clay simulation</Pill>
         ) : (
           <Pill tone="outline">User-supplied</Pill>
         )}
@@ -55,13 +59,17 @@ export function SignalCard({
           <span className="truncate font-medium text-ink-soft">{signal.sourceName}</span>
         </span>
         {signal.sourceUrl ? (
-          signal.provenance === "user" ? (
+          signal.provenance === "user" || signal.provenance === "public" ? (
             <a
               href={signal.sourceUrl}
               target="_blank"
               rel="noopener noreferrer nofollow"
               className="inline-flex min-h-6 min-w-0 items-center gap-1 font-medium text-primary underline-offset-2 hover:underline"
-              title="Opens the user-supplied URL. Not verified by Aurfy."
+              title={
+                signal.provenance === "public"
+                  ? "Opens the public page read for this snapshot. Not independently audited."
+                  : "Opens the user-supplied URL. Not verified by Aurfy."
+              }
             >
               <span className="max-w-[15rem] truncate">{signal.sourceUrl.replace(/^https?:\/\//, "")}</span>
               <ExternalLink className="h-3 w-3 shrink-0" aria-hidden="true" />
@@ -72,7 +80,7 @@ export function SignalCard({
             </span>
           )
         ) : (
-          <span className="text-muted-foreground">No URL supplied</span>
+          <span className="text-muted-foreground">No URL — simulated</span>
         )}
       </div>
 
@@ -80,13 +88,25 @@ export function SignalCard({
         <div>
           <dt className="font-mono-label text-[9px] text-muted-foreground">Published</dt>
           <dd className="mt-0.5 font-medium text-ink-soft">
-            {signal.sourceDate ? formatDate(signal.sourceDate) : signal.provenance === "demo" ? "Not supplied (fictional demo)" : "Not supplied by you"}
+            {signal.sourceDate
+              ? formatDate(signal.sourceDate)
+              : signal.provenance === "demo"
+                ? "Not supplied (fictional demo)"
+                : signal.provenance === "clay"
+                  ? "No date (simulated)"
+                  : signal.provenance === "public"
+                    ? "Not stated on page"
+                    : "Not supplied by you"}
           </dd>
         </div>
         <div>
           <dt className="font-mono-label text-[9px] text-muted-foreground">Retrieved</dt>
           <dd className="mt-0.5 font-medium text-ink-soft">
-            {signal.retrievedAt ? formatDate(signal.retrievedAt) : "Not retrieved by this app"}
+            {signal.retrievedAt
+              ? formatDate(signal.retrievedAt)
+              : signal.provenance === "clay"
+                ? "Not retrieved (simulated)"
+                : "Not retrieved by this app"}
           </dd>
         </div>
       </dl>
@@ -103,6 +123,17 @@ export function SignalCard({
         </p>
         <p className="mt-1 text-[13px] leading-relaxed text-ink-soft">{signal.whyItMatters}</p>
       </div>
+
+      {signal.provenance === "clay" ? (
+        <p className="mt-2 rounded-lg border border-warning/25 bg-warning-soft/50 px-2.5 py-1.5 text-[10px] leading-relaxed text-warning">
+          Simulated Clay record. Not real enrichment, a real merchant or a real source.
+        </p>
+      ) : null}
+      {signal.provenance === "public" ? (
+        <p className="mt-2 rounded-lg border border-primary/15 bg-primary-soft/50 px-2.5 py-1.5 text-[10px] leading-relaxed text-secondary-foreground">
+          Public page snapshot read on {formatDate(signal.retrievedAt)}. Not independently audited; no payment data is implied.
+        </p>
+      ) : null}
 
       <p className="mt-2.5 flex gap-2 text-[13px] leading-relaxed text-foreground">
         <MessageSquareQuote className="mt-0.5 h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
@@ -128,7 +159,9 @@ export function SignalCard({
           </div>
           <div className="flex flex-wrap items-center gap-1.5">
             <Pill tone={confidenceTone[signal.confidence]}>{signal.confidence} confidence</Pill>
-            <Pill tone="outline">{signal.provenance === "demo" ? "Demo library" : "Not independently verified"}</Pill>
+            <Pill tone={signal.provenance === "public" ? "primary" : signal.provenance === "clay" ? "warning" : "outline"}>
+              {PROVENANCE_LABEL[signal.provenance]}
+            </Pill>
             <Pill tone={statusTone[signal.status]}>{statusLabel[signal.status]}</Pill>
           </div>
         </div>

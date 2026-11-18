@@ -8,6 +8,7 @@ import {
   Info,
   Menu,
   MonitorSmartphone,
+  Radar,
   RotateCcw,
   Smartphone,
   Wifi,
@@ -19,6 +20,7 @@ import { useOnline } from "@/aurfy/use-online";
 import { useInstallPrompt } from "@/aurfy/use-install-prompt";
 import { workflowProgress } from "@/aurfy/progress";
 import { STAGES } from "@/aurfy/content";
+import { merchantSourceMeta } from "@/aurfy/utils";
 import { cn } from "@/lib/utils";
 import { BrandLockup, BrandMark } from "./brand";
 import { MOBILE_NAV, WORKFLOW, stepForPath } from "./nav";
@@ -250,7 +252,9 @@ export function AppShell() {
   const [menuOpen, setMenuOpen] = useState(false);
   const step = stepForPath(pathname);
   const isMore = pathname === "/more";
+  const isProspects = pathname === "/prospects";
   const stage = STAGES.find((item) => item.id === pipeline.stage);
+  const merchantSource = merchantSourceMeta(merchant);
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "instant" as ScrollBehavior });
@@ -258,8 +262,14 @@ export function AppShell() {
   }, [pathname]);
 
   useEffect(() => {
-    document.title = isMore ? "More · Aurfy Signal Studio" : step ? `${step.label} · Aurfy Signal Studio` : "Aurfy Signal Studio";
-  }, [step, isMore]);
+    document.title = isProspects
+      ? "Prospect engine · Aurfy Signal Studio"
+      : isMore
+        ? "More · Aurfy Signal Studio"
+        : step
+          ? `${step.label} · Aurfy Signal Studio`
+          : "Aurfy Signal Studio";
+  }, [step, isMore, isProspects]);
 
   return (
     <div className="aurfy-shell min-h-[100dvh]">
@@ -280,7 +290,7 @@ export function AppShell() {
             <p className="font-mono-label mb-2 text-[9px] text-muted-foreground">Working on</p>
             <MerchantSwitcher />
             <div className="mt-2 flex items-center justify-between gap-2">
-              <Pill tone={merchant.isDemo ? "warning" : "outline"}>{merchant.isDemo ? "Demo merchant" : "Manual record"}</Pill>
+              <Pill tone={merchantSource.tone}>{merchantSource.label}</Pill>
               <Pill tone="neutral">{stage?.short}</Pill>
             </div>
             <PersistenceBadge />
@@ -298,6 +308,18 @@ export function AppShell() {
           >
             <Info className="h-4 w-4" aria-hidden="true" />
             Studio overview
+          </NavLink>
+          <NavLink
+            to="/prospects"
+            className={({ isActive }) =>
+              cn(
+                "mt-1 flex min-h-10 items-center gap-2 rounded-xl px-2.5 text-[12px] font-semibold transition",
+                isActive ? "bg-primary-soft text-primary" : "text-muted-foreground hover:bg-secondary hover:text-foreground",
+              )
+            }
+          >
+            <Radar className="h-4 w-4" aria-hidden="true" />
+            Prospect engine
           </NavLink>
 
           <nav className="mt-2 min-h-0 flex-1 overflow-y-auto" aria-label="Workflow steps">
@@ -354,24 +376,32 @@ export function AppShell() {
                     </SheetTitle>
                   </SheetHeader>
                   <div className="mt-4 space-y-4 pb-8">
-                    <div className="grid grid-cols-2 gap-2">
+                    <div className="grid grid-cols-3 gap-2">
                       <NavLink
                         to="/more"
                         end
                         onClick={() => setMenuOpen(false)}
-                        className="flex min-h-11 items-center gap-2 rounded-xl border border-border bg-card px-3 text-[11.5px] font-semibold text-foreground"
+                        className="flex min-h-12 flex-col items-center justify-center gap-1 rounded-xl border border-border bg-card px-2 text-[10px] font-semibold text-foreground"
                       >
-                        <Info className="h-3.5 w-3.5" aria-hidden="true" />
+                        <Info className="h-4 w-4" aria-hidden="true" />
                         Overview
+                      </NavLink>
+                      <NavLink
+                        to="/prospects"
+                        onClick={() => setMenuOpen(false)}
+                        className="flex min-h-12 flex-col items-center justify-center gap-1 rounded-xl border border-border bg-card px-2 text-[10px] font-semibold text-foreground"
+                      >
+                        <Radar className="h-4 w-4" aria-hidden="true" />
+                        Prospects
                       </NavLink>
                       <NavLink
                         to="/"
                         end
                         onClick={() => setMenuOpen(false)}
-                        className="flex min-h-11 items-center gap-2 rounded-xl border border-border bg-card px-3 text-[11.5px] font-semibold text-foreground"
+                        className="flex min-h-12 flex-col items-center justify-center gap-1 rounded-xl border border-border bg-card px-2 text-[10px] font-semibold text-foreground"
                       >
                         <BrandMark className="h-4 w-4" />
-                        Concept deck
+                        Deck
                       </NavLink>
                     </div>
                     <StepList onNavigate={() => setMenuOpen(false)} />
@@ -402,10 +432,12 @@ export function AppShell() {
           <div className="sticky top-0 z-30 hidden border-b border-border/60 bg-background/80 backdrop-blur lg:block">
             <div className="mx-auto flex h-14 max-w-[1180px] items-center gap-3 px-8">
               <span className="font-mono-label text-[10px] text-muted-foreground">
-                {isMore ? "Learn more" : step ? `Step ${step.step} of 7` : "Studio overview"}
+                {isProspects ? "Public snapshot + Clay simulation" : isMore ? "Learn more" : step ? `Step ${step.step} of 7` : "Studio overview"}
               </span>
               <span className="h-3 w-px bg-border" aria-hidden="true" />
-              <span className="text-[13px] font-semibold text-foreground">{isMore ? "More" : step?.label ?? "Signal Studio"}</span>
+              <span className="text-[13px] font-semibold text-foreground">
+                {isProspects ? "Prospect engine" : isMore ? "More" : step?.label ?? "Signal Studio"}
+              </span>
               <div className="ml-auto flex items-center gap-2">
                 <span
                   className={cn(

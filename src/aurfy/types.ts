@@ -1,7 +1,7 @@
 export type SignalCategory = "customer" | "peer";
 export type SignalStatus = "new" | "selected" | "saved" | "rejected";
 export type Confidence = "low" | "medium" | "high";
-export type Provenance = "demo" | "user";
+export type Provenance = "demo" | "user" | "public" | "clay";
 
 export type Signal = {
   id: string;
@@ -27,6 +27,8 @@ export type Signal = {
   addedAt: string;
 };
 
+export type MerchantSource = "demo" | "manual" | "public" | "clay_simulated";
+
 export type Merchant = {
   id: string;
   name: string;
@@ -34,6 +36,7 @@ export type Merchant = {
   category: string;
   notes: string;
   isDemo: boolean;
+  recordSource?: MerchantSource;
   createdAt: string;
 };
 

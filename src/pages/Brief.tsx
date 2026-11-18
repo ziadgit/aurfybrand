@@ -6,7 +6,7 @@ import { useStudio } from "@/aurfy/store";
 import { useOnline } from "@/aurfy/use-online";
 import { AI_AVAILABLE, AI_MODEL_LABEL, requestAiBrief } from "@/aurfy/ai";
 import { templateBrief } from "@/aurfy/draft";
-import { CATEGORY_LABEL, formatDateTime } from "@/aurfy/utils";
+import { CATEGORY_LABEL, PROVENANCE_LABEL, formatDateTime } from "@/aurfy/utils";
 import { cn } from "@/lib/utils";
 import { PageHeader } from "@/components/aurfy/page-header";
 import {
@@ -354,7 +354,17 @@ export default function Brief() {
             <li key={signal.id} className="surface p-3.5">
               <div className="flex flex-wrap items-center gap-1.5">
                 <Pill tone={signal.category === "customer" ? "primary" : "neutral"}>{CATEGORY_LABEL[signal.category]}</Pill>
-                {signal.provenance === "demo" ? <Pill tone="warning">Demo · fictional</Pill> : <Pill tone="outline">User-supplied</Pill>}
+                <Pill
+                  tone={
+                    signal.provenance === "public"
+                      ? "primary"
+                      : signal.provenance === "demo" || signal.provenance === "clay"
+                        ? "warning"
+                        : "outline"
+                  }
+                >
+                  {PROVENANCE_LABEL[signal.provenance]}
+                </Pill>
                 <Pill tone="outline">{signal.confidence} confidence</Pill>
               </div>
               <p className="mt-2 text-[13px] font-semibold leading-snug text-foreground">{signal.title}</p>
@@ -362,8 +372,18 @@ export default function Brief() {
                 {signal.sourceName} · {signal.sourceUrl}
               </p>
               <p className="mt-2 text-[11.5px] leading-relaxed text-ink-soft">
-                {signal.sourceDate ? `Source date ${signal.sourceDate}. ` : "No real publication date supplied. "}
-                {signal.retrievedAt ? `Retrieved ${formatDateTime(signal.retrievedAt)}. ` : "Not retrieved by this app. "}
+                {signal.sourceDate
+                  ? `Source date ${signal.sourceDate}. `
+                  : signal.provenance === "public"
+                    ? "No publication date was stated on the public page. "
+                    : signal.provenance === "clay"
+                      ? "Simulated record with no real publication or retrieval date. "
+                      : "No real publication date supplied. "}
+                {signal.retrievedAt
+                  ? `Read for this snapshot ${formatDateTime(signal.retrievedAt)}. `
+                  : signal.provenance === "clay"
+                    ? "Not retrieved — synthetic. "
+                    : "Not retrieved by this app. "}
                 {signal.limitations}
               </p>
             </li>

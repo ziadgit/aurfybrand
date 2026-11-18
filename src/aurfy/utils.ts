@@ -1,3 +1,5 @@
+import type { Merchant, Provenance } from "./types";
+
 export function formatDate(value: string | null | undefined, fallback = "Not available"): string {
   if (!value) return fallback;
   const date = new Date(value.length === 10 ? `${value}T12:00:00` : value);
@@ -131,3 +133,31 @@ export const CONFIDENCE_LABEL: Record<string, string> = {
   medium: "Medium confidence",
   high: "High confidence",
 };
+
+
+export const PROVENANCE_LABEL: Record<Provenance, string> = {
+  demo: "Demo · fictional",
+  user: "User-supplied",
+  public: "Public snapshot",
+  clay: "Clay simulation",
+};
+
+export const PROVENANCE_DETAIL: Record<Provenance, string> = {
+  demo: "Fictional demo signal",
+  user: "User-supplied, not independently verified",
+  public: "Public page snapshot; not independently audited",
+  clay: "Simulated Clay record; synthetic, not real enrichment",
+};
+
+export function merchantSourceMeta(merchant: Pick<Merchant, "isDemo" | "recordSource">): {
+  label: string;
+  short: string;
+  tone: "warning" | "outline" | "primary";
+} {
+  if (merchant.recordSource === "public") return { label: "Public snapshot", short: "Public", tone: "primary" };
+  if (merchant.recordSource === "clay_simulated") return { label: "Clay simulation", short: "Clay", tone: "warning" };
+  if (merchant.recordSource === "manual") return { label: "Manual record", short: "Manual", tone: "outline" };
+  return merchant.isDemo
+    ? { label: "Demo · fictional", short: "Demo", tone: "warning" }
+    : { label: "Manual record", short: "Manual", tone: "outline" };
+}

@@ -54,6 +54,17 @@
       ]
     },
     {
+      "name": "Prospect engine",
+      "short_name": "Prospects",
+      "url": "/prospects",
+      "icons": [
+        {
+          "src": "/icons/icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
+    },
+    {
       "name": "Signals feed",
       "short_name": "Signals",
       "url": "/signals",

@@ -20,7 +20,7 @@ import { useStudio } from "@/aurfy/store";
 import { useOnline } from "@/aurfy/use-online";
 import { nextIncompleteStep, workflowProgress } from "@/aurfy/progress";
 import { STAGES } from "@/aurfy/content";
-import { dueLabel, formatDate, hostOf, initials } from "@/aurfy/utils";
+import { dueLabel, formatDate, hostOf, initials, merchantSourceMeta } from "@/aurfy/utils";
 import { cn } from "@/lib/utils";
 import { WORKFLOW } from "@/components/aurfy/nav";
 import { MerchantSwitcher } from "@/components/aurfy/merchant-switcher";
@@ -47,6 +47,7 @@ export default function Studio() {
   const next = nextIncompleteStep(done);
   const nextMeta = WORKFLOW[next.step - 1];
   const stage = STAGES.find((item) => item.id === pipeline.stage);
+  const merchantSource = merchantSourceMeta(merchant);
   const due = dueLabel(pipeline.dueDate);
   const stageCounts = STAGES.map((item) => ({
     ...item,
@@ -66,7 +67,13 @@ export default function Studio() {
           <ArrowLeft className="h-3.5 w-3.5" aria-hidden="true" />
           Concept deck
         </Link>
-        <span className="font-mono-label text-[9px] text-muted-foreground">More · how it works</span>
+        <Link
+          to="/prospects"
+          className="inline-flex min-h-9 items-center gap-1 rounded-full border border-border bg-card px-3 text-[10.5px] font-semibold text-primary transition hover:border-primary/30"
+        >
+          Prospect engine
+          <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
+        </Link>
       </div>
 
       {/* Hero */}
@@ -148,7 +155,7 @@ export default function Studio() {
         <div className="flex flex-wrap items-center justify-between gap-2">
           <p className="font-mono-label text-[10px] text-muted-foreground">Working merchant</p>
           <div className="flex items-center gap-1.5">
-            <Pill tone={merchant.isDemo ? "warning" : "outline"}>{merchant.isDemo ? "Demo · fictional" : "Manual record"}</Pill>
+            <Pill tone={merchantSource.tone}>{merchantSource.label}</Pill>
             <StageBadge stage={pipeline.stage} />
           </div>
         </div>

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { ArrowRight, ChevronLeft, ChevronRight, ShieldCheck, WifiOff } from "lucide-react";
+import { ArrowRight, ChevronLeft, ChevronRight, Radar, ShieldCheck, WifiOff } from "lucide-react";
 import { toast } from "sonner";
 import { useStudio } from "@/aurfy/store";
 import { useOnline } from "@/aurfy/use-online";
@@ -237,16 +237,20 @@ export default function Showcase() {
 
           <Button
             type="button"
-            onClick={openConcept}
+            onClick={() => navigate("/prospects")}
             className="mt-1 h-11 w-full rounded-full bg-primary text-[12.5px] font-semibold text-primary-foreground shadow-card hover:bg-primary/90"
           >
-            Open this concept
+            <Radar className="h-4 w-4" aria-hidden="true" />
+            Find new co-brands
             <ArrowRight className="h-4 w-4" aria-hidden="true" />
           </Button>
 
-          <div className="mt-1 flex items-center justify-center">
-            <Link to="/intake" className="inline-flex min-h-8 items-center text-[10.5px] font-semibold text-primary">
-              Start with a new merchant
+          <div className="mt-1 flex items-center justify-between gap-2 text-[10.5px]">
+            <button type="button" onClick={openConcept} className="inline-flex min-h-8 items-center font-semibold text-primary">
+              Open this concept
+            </button>
+            <Link to="/intake" className="inline-flex min-h-8 items-center text-muted-foreground">
+              Add manually
             </Link>
           </div>
 

@@ -5,7 +5,7 @@ import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { useStudio } from "@/aurfy/store";
 import { STAGES } from "@/aurfy/content";
-import { initials } from "@/aurfy/utils";
+import { initials, merchantSourceMeta } from "@/aurfy/utils";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import {
@@ -87,7 +87,7 @@ export function MerchantSwitcher({ compact = false }: { compact?: boolean }) {
                     </span>
                     <span className="mt-0.5 block truncate text-xs text-muted-foreground">{item.category || "No category"}</span>
                     <span className="mt-1.5 flex flex-wrap gap-1.5">
-                      {item.isDemo ? <Pill tone="warning">Demo</Pill> : <Pill tone="outline">Manual record</Pill>}
+                      <Pill tone={merchantSourceMeta(item).tone}>{merchantSourceMeta(item).label}</Pill>
                       <Pill tone="neutral">{itemStage?.label ?? "Research"}</Pill>
                     </span>
                   </span>
@@ -98,8 +98,8 @@ export function MerchantSwitcher({ compact = false }: { compact?: boolean }) {
         </ul>
 
         <div className="rounded-2xl border border-dashed border-border bg-muted/40 p-3 text-xs leading-relaxed text-muted-foreground">
-          Demo merchants and their signals are fictional. Manual merchants start empty — load the fictional demo library or paste
-          a public source to work with.
+          Demo merchants and their signals are fictional. Records added from the prospect engine are labeled Public snapshot or Clay
+          simulation. Manual merchants start empty — load the fictional demo library or paste a public source to work with.
         </div>
 
         <Button asChild className="w-full">

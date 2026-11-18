@@ -17,7 +17,7 @@ import { toast } from "sonner";
 import { useStudio } from "@/aurfy/store";
 import { STAGES } from "@/aurfy/content";
 import type { StageId } from "@/aurfy/types";
-import { dueLabel, formatDate, formatDateTime, initials, todayISO } from "@/aurfy/utils";
+import { dueLabel, formatDate, formatDateTime, initials, merchantSourceMeta, todayISO } from "@/aurfy/utils";
 import { cn } from "@/lib/utils";
 import { PageHeader } from "@/components/aurfy/page-header";
 import { StageBadge } from "@/components/aurfy/stage-badge";
@@ -39,6 +39,7 @@ export default function Pipeline() {
     [state.merchants, state.pipeline],
   );
 
+  const currentSource = merchantSourceMeta(merchant);
   const overdue = state.merchants.filter((item) => dueLabel(state.pipeline[item.id]?.dueDate ?? "").tone === "overdue").length;
   const dueSoon = state.merchants.filter((item) => {
     const tone = dueLabel(state.pipeline[item.id]?.dueDate ?? "").tone;
@@ -117,7 +118,7 @@ export default function Pipeline() {
                 <p className="mt-0.5 flex flex-wrap items-center gap-1.5 text-[11px] text-muted-foreground">
                   {merchant.category || "No category"}
                   <span aria-hidden="true">·</span>
-                  {merchant.isDemo ? "Demo record" : "Manual record"}
+                  {currentSource.label}
                 </p>
               </div>
               <StageBadge stage={pipeline.stage} />
@@ -308,7 +309,7 @@ export default function Pipeline() {
                         <span className="mt-0.5 block truncate text-[10.5px] text-muted-foreground">{itemPipeline?.nextAction || "No next action"}</span>
                         <span className="mt-1 flex flex-wrap items-center gap-1.5">
                           <StageBadge stage={itemPipeline?.stage ?? "research"} />
-                          <Pill tone={item.isDemo ? "warning" : "outline"}>{item.isDemo ? "Demo" : "Manual"}</Pill>
+                          <Pill tone={merchantSourceMeta(item).tone}>{merchantSourceMeta(item).label}</Pill>
                           <span className={cn("text-[10px]", itemDue.tone === "overdue" ? "font-semibold text-destructive" : "text-muted-foreground")}>
                             {itemDue.label}
                           </span>

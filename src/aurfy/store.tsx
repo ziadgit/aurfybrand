@@ -30,6 +30,18 @@ export type PersistenceState = "saved" | "saving" | "error" | "unavailable";
 
 type NewMerchantInput = { name: string; url: string; category: string; notes: string };
 
+type SourcedMerchantInput = {
+  name: string;
+  url: string;
+  category: string;
+  notes: string;
+  recordSource: "public" | "clay_simulated";
+  signals: Omit<Signal, "id" | "status" | "addedAt">[];
+};
+
+const normalizeMerchantUrl = (url: string) =>
+  url.trim().toLowerCase().replace(/^https?:\/\//, "").replace(/\/+$/, "");
+
 type SignalInput = {
   category: SignalCategory;
   title: string;
@@ -52,6 +64,7 @@ type StudioContextValue = {
   storageError: string | null;
   setActiveMerchant: (id: string) => void;
   addMerchant: (input: NewMerchantInput) => Merchant;
+  addSourcedMerchant: (input: SourcedMerchantInput) => { merchantId: string; created: boolean; signalCount: number };
   updateMerchant: (patch: Partial<Pick<Merchant, "name" | "url" | "category" | "notes">>) => void;
   deleteMerchant: (id: string) => void;
   setSignalStatus: (signalId: string, status: SignalStatus) => void;
@@ -248,6 +261,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
       category: input.category.trim(),
       notes: input.notes.trim(),
       isDemo: false,
+      recordSource: "manual",
       createdAt: new Date().toISOString(),
     };
     setState((current) =>
@@ -265,6 +279,78 @@ export function StudioProvider({ children }: { children: ReactNode }) {
     );
     return newMerchant;
   }, []);
+
+  const addSourcedMerchant = useCallback(
+    (input: SourcedMerchantInput) => {
+      const existing = state.merchants.find(
+        (merchant) =>
+          (merchant.url && normalizeMerchantUrl(merchant.url) === normalizeMerchantUrl(input.url)) ||
+          merchant.name.trim().toLowerCase() === input.name.trim().toLowerCase(),
+      );
+      if (existing) {
+        setState((current) => touch({ ...current, activeMerchantId: existing.id }));
+        return {
+          merchantId: existing.id,
+          created: false,
+          signalCount: state.signalsByMerchant[existing.id]?.length ?? 0,
+        };
+      }
+
+      const merchantId = `src_${Date.now().toString(36)}`;
+      const createdAt = new Date().toISOString();
+      const merchant: Merchant = {
+        id: merchantId,
+        name: input.name.trim(),
+        url: input.url.trim(),
+        category: input.category.trim(),
+        notes: input.notes.trim(),
+        isDemo: false,
+        recordSource: input.recordSource,
+        createdAt,
+      };
+      const signals = input.signals.map((signal, index) => ({
+        ...signal,
+        id: `sg_${merchantId}_${String(index + 1).padStart(2, "0")}`,
+        status: "new" as SignalStatus,
+        addedAt: createdAt,
+      }));
+      const due = new Date();
+      due.setDate(due.getDate() + 2);
+      const pipeline = {
+        ...defaultPipeline(),
+        nextAction: "Review the imported signals and select a balanced customer + peer set",
+        dueDate: due.toISOString().slice(0, 10),
+        notes: `Created from the prospect engine on ${new Date().toLocaleDateString("en-GB")}. Review every imported source before using it.`,
+        updatedAt: createdAt,
+      };
+
+      setState((current) => {
+        if (
+          current.merchants.some(
+            (item) =>
+              (item.url && normalizeMerchantUrl(item.url) === normalizeMerchantUrl(input.url)) ||
+              item.name.trim().toLowerCase() === input.name.trim().toLowerCase(),
+          )
+        ) {
+          return current;
+        }
+        return touch({
+          ...current,
+          merchants: [...current.merchants, merchant],
+          activeMerchantId: merchantId,
+          signalsByMerchant: { ...current.signalsByMerchant, [merchantId]: signals },
+          briefs: { ...current.briefs, [merchantId]: emptyBrief() },
+          positioning: { ...current.positioning, [merchantId]: emptyPositioning() },
+          concepts: { ...current.concepts, [merchantId]: emptyConcept(merchant.name) },
+          outreach: { ...current.outreach, [merchantId]: emptyOutreach() },
+          pipeline: { ...current.pipeline, [merchantId]: pipeline },
+        });
+      });
+
+      return { merchantId, created: true, signalCount: signals.length };
+    },
+    [state],
+  );
 
   const updateMerchant = useCallback((patch: Partial<Pick<Merchant, "name" | "url" | "category" | "notes">>) => {
     setState((current) => {
@@ -564,6 +650,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
     storageError,
     setActiveMerchant,
     addMerchant,
+    addSourcedMerchant,
     updateMerchant,
     deleteMerchant,
     setSignalStatus,

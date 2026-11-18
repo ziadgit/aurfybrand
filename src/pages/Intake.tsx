@@ -4,7 +4,7 @@ import { ArrowRight, Building2, Check, Loader2, Plus, Radar, Trash2, Users } fro
 import { toast } from "sonner";
 import { useStudio } from "@/aurfy/store";
 import { STAGES } from "@/aurfy/content";
-import { initials } from "@/aurfy/utils";
+import { initials, merchantSourceMeta } from "@/aurfy/utils";
 import { cn } from "@/lib/utils";
 import { PageHeader } from "@/components/aurfy/page-header";
 import { MerchantSwitcher } from "@/components/aurfy/merchant-switcher";
@@ -59,6 +59,7 @@ export default function Intake() {
   const [savedFlash, setSavedFlash] = useState(false);
   const [newForm, setNewForm] = useState<FormState>(emptyForm);
   const [newErrors, setNewErrors] = useState<{ name?: string; url?: string }>({});
+  const currentSource = merchantSourceMeta(merchant);
   const [creating, setCreating] = useState(false);
 
   useEffect(() => {
@@ -126,7 +127,7 @@ export default function Intake() {
         description="Start with the merchant, not the pitch. These fields stay visible throughout the workflow and can be corrected at any time."
         action={
           <div className="flex items-center gap-2">
-            <Pill tone={merchant.isDemo ? "warning" : "outline"}>{merchant.isDemo ? "Demo record" : "Manual record"}</Pill>
+            <Pill tone={currentSource.tone}>{currentSource.label}</Pill>
             <MerchantSwitcher compact />
           </div>
         }
@@ -285,7 +286,7 @@ export default function Intake() {
                   <div className="flex items-center gap-1.5">
                     <p className="truncate text-sm font-semibold text-foreground">{item.name}</p>
                     {isActive ? <Pill tone="primary">Current</Pill> : null}
-                    <Pill tone={item.isDemo ? "warning" : "outline"}>{item.isDemo ? "Demo" : "Manual"}</Pill>
+                    <Pill tone={merchantSourceMeta(item).tone}>{merchantSourceMeta(item).label}</Pill>
                   </div>
                   <p className="mt-0.5 truncate text-[11px] text-muted-foreground">
                     {item.category || "No category"} · {recordStage?.label ?? "Research"}

@@ -9,8 +9,12 @@ export type OutreachParts = {
   question: string;
 };
 
-const provenanceLabel = (signal: Signal) =>
-  signal.provenance === "demo" ? "Fictional demo signal" : "User-supplied, unverified";
+const provenanceLabel = (signal: Signal) => {
+  if (signal.provenance === "demo") return "Fictional demo signal";
+  if (signal.provenance === "public") return "Public page snapshot, not independently audited";
+  if (signal.provenance === "clay") return "Simulated Clay record (synthetic)";
+  return "User-supplied, unverified";
+};
 
 function sentence(text: string, max = 220): string {
   const clean = clampText(text, max);
@@ -51,11 +55,19 @@ export function templateBrief(merchant: Merchant, signals: Signal[]): DraftResul
   const unknowns = [
     limitationLines,
     "• No order volume, conversion, average basket, payment cost or settlement data was supplied.",
-    signals.every((signal) => signal.provenance === "demo")
-      ? "• The demo library has no real publication or retrieval dates; nothing here is independently verified."
-      : "• User-supplied sources were not fetched or independently verified by this app.",
+    signals.some((signal) => signal.provenance === "demo")
+      ? "• The demo library has no real publication or retrieval dates; nothing there is independently verified."
+      : "",
+    signals.some((signal) => signal.provenance === "public")
+      ? "• Public snapshot pages were read on the cited date but were not audited beyond that page; no payment-stack, volume or customer data was available."
+      : "",
+    signals.some((signal) => signal.provenance === "clay")
+      ? "• Clay simulation records are synthetic. They are not real enrichment, a real merchant or a real source and cannot support a market claim."
+      : "",
     "• Whether these observations are representative of the wider customer base. (Open question.)",
-  ].join("\n");
+  ]
+    .filter(Boolean)
+    .join("\n");
 
   return {
     observed,
@@ -76,8 +88,17 @@ export function templateOutreach(
   const primary = signals.find((signal) => signal.id === primarySignalId) ?? signals[0];
   const angleMeta = ANGLES.find((item) => item.id === angle);
 
+  const sourceLead =
+    primary?.provenance === "public"
+      ? "In a public page snapshot (not independently audited): "
+      : primary?.provenance === "clay"
+        ? "In a simulated Clay record (synthetic, not real research): "
+        : primary?.provenance === "demo"
+          ? "In a fictional demo signal: "
+          : "In our working notes: ";
+
   const observation = primary
-    ? `I'm working through a note about ${lowerFirst(primary.title.replace(/\.$/, ""))}. In our working notes: ${sentence(
+    ? `I'm working through a note about ${lowerFirst(primary.title.replace(/\.$/, ""))}. ${sourceLead}${sentence(
         primary.evidence,
         180,
       )}`

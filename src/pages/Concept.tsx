@@ -24,7 +24,7 @@ import type { ConceptLayoutId } from "@/aurfy/types";
 import { templateConcept } from "@/aurfy/draft";
 import { useOnline } from "@/aurfy/use-online";
 import { useConceptVisual } from "@/aurfy/use-concept-visual";
-import { formatDateTime, initials, resizeImageFile } from "@/aurfy/utils";
+import { PROVENANCE_DETAIL, PROVENANCE_LABEL, formatDateTime, initials, resizeImageFile } from "@/aurfy/utils";
 import { cn } from "@/lib/utils";
 import { PageHeader } from "@/components/aurfy/page-header";
 import { ConceptCard, CONCEPT_DISCLAIMER } from "@/components/aurfy/concept-card";
@@ -101,7 +101,7 @@ export default function Concept() {
         "",
         `Angle: ${angle?.label ?? "No angle chosen"}`,
         `Grounding signal: ${signal?.title ?? "No signal chosen"}`,
-        signal ? `Signal provenance: ${signal.provenance === "demo" ? "Fictional demo signal" : "User-supplied, unverified"}` : "",
+        signal ? `Signal provenance: ${PROVENANCE_DETAIL[signal.provenance]}` : "",
         `Approved capability: ${capability?.statement ?? "No capability chosen"}`,
         `Art direction: ${CONCEPT_LAYOUTS.find((item) => item.id === (concept.layout ?? "editorial"))?.label ?? "Editorial"} · ${
           CONCEPT_FONTS.find((item) => item.id === (concept.displayFont ?? "bodoni"))?.label ?? "Bodoni Moda"
@@ -226,7 +226,7 @@ export default function Concept() {
               capability={capability?.label}
               signalNote={
                 signal
-                  ? `${signal.provenance === "demo" ? "Fictional demo signal" : "User-supplied"}: ${signal.title}`
+                  ? `${PROVENANCE_LABEL[signal.provenance]}: ${signal.title}`
                   : undefined
               }
               palette={concept.palette}
