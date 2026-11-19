@@ -9,10 +9,15 @@ import {
   emptyPositioning,
   freshSignals,
 } from "./demo";
+import { templateConcept } from "./draft";
 import type {
+  AngleId,
   Brief,
   Capability,
   ConceptDraft,
+  ConceptFontId,
+  ConceptLayoutId,
+  ConceptPaletteId,
   Merchant,
   OutreachDraft,
   PipelineEntry,
@@ -43,6 +48,14 @@ type QueueCoBrandInput = {
   signals: Omit<Signal, "id" | "status" | "addedAt">[];
 };
 
+/** Instant co-brand card generated straight from a homepage signal. */
+export type GenerateCardInput = QueueCoBrandInput & {
+  angle: AngleId;
+  palette: ConceptPaletteId;
+  fontId: ConceptFontId;
+  layout: ConceptLayoutId;
+};
+
 type SourcedMerchantInput = {
   name: string;
   logoUrl?: string | null;
@@ -55,6 +68,9 @@ type SourcedMerchantInput = {
 
 const normalizeMerchantUrl = (url: string) =>
   url.trim().toLowerCase().replace(/^https?:\/\//, "").replace(/\/+$/, "");
+
+const capabilityIdForAngle = (angle: AngleId) =>
+  angle === "choice" ? "cap_wallets" : angle === "simpler" ? "cap_api" : "cap_payments";
 
 type SignalInput = {
   category: SignalCategory;
@@ -81,6 +97,7 @@ type StudioContextValue = {
   addSourcedMerchant: (input: SourcedMerchantInput) => { merchantId: string; created: boolean; signalCount: number };
   addSignalsToMerchant: (merchantId: string, signals: Omit<Signal, "id" | "status" | "addedAt">[]) => number;
   queueCoBrand: (input: QueueCoBrandInput) => { merchantId: string; created: boolean; queued: boolean };
+  generateCoBrandCard: (input: GenerateCardInput) => { merchantId: string; created: boolean };
   dequeueCoBrand: (merchantId: string) => void;
   updateMerchant: (patch: Partial<Pick<Merchant, "name" | "url" | "category" | "notes">>) => void;
   deleteMerchant: (id: string) => void;
@@ -541,6 +558,126 @@ export function StudioProvider({ children }: { children: ReactNode }) {
     [state],
   );
 
+  const generateCoBrandCard = useCallback(
+    (input: GenerateCardInput) => {
+      const now = new Date().toISOString();
+      const normalizedUrl = normalizeMerchantUrl(input.url);
+      const existing = input.merchantId
+        ? state.merchants.find((merchant) => merchant.id === input.merchantId)
+        : state.merchants.find(
+            (merchant) =>
+              (merchant.url && normalizeMerchantUrl(merchant.url) === normalizedUrl) ||
+              merchant.name.trim().toLowerCase() === input.name.trim().toLowerCase(),
+          );
+      const newMerchantId = `src_${Date.now().toString(36)}`;
+
+      setState((current) => {
+        const match = existing
+          ? current.merchants.find((merchant) => merchant.id === existing.id)
+          : current.merchants.find(
+              (merchant) =>
+                (merchant.url && normalizeMerchantUrl(merchant.url) === normalizedUrl) ||
+                merchant.name.trim().toLowerCase() === input.name.trim().toLowerCase(),
+            );
+        const merchant: Merchant = match ?? {
+          id: newMerchantId,
+          name: input.name.trim(),
+          url: input.url.trim(),
+          category: input.category.trim(),
+          notes: input.notes.trim(),
+          isDemo: false,
+          recordSource: input.recordSource,
+          createdAt: now,
+        };
+        const merchantId = merchant.id;
+
+        const existingSignals = current.signalsByMerchant[merchantId] ?? [];
+        const seed = input.signals.find((signal) => signal.title === input.signalTitle);
+        const seedIsNew = Boolean(seed) && !existingSignals.some((signal) => signal.title === input.signalTitle);
+        const withSeed: Signal[] =
+          seed && seedIsNew
+            ? [
+                {
+                  ...seed,
+                  id: `sg_${merchantId}_card_${Date.now().toString(36)}`,
+                  status: "selected",
+                  addedAt: now,
+                },
+                ...existingSignals,
+              ]
+            : existingSignals;
+        const signals = withSeed.map((signal) =>
+          signal.title === input.signalTitle ? { ...signal, status: "selected" as SignalStatus } : signal,
+        );
+        const primarySignal = signals.find((signal) => signal.title === input.signalTitle);
+
+        const positioning = current.positioning[merchantId] ?? emptyPositioning();
+        const capability =
+          positioning.capabilities.find((item) => item.id === capabilityIdForAngle(input.angle)) ??
+          positioning.capabilities[0];
+        const copy = templateConcept(merchant, undefined, capability, input.angle);
+        const existingConcept = current.concepts[merchantId] ?? emptyConcept(merchant.name);
+        const concept: ConceptDraft = {
+          ...existingConcept,
+          headline: copy.headline,
+          subhead: copy.subhead,
+          palette: input.palette,
+          layout: input.layout,
+          displayFont: input.fontId,
+          logoDataUrl: input.logoUrl ?? existingConcept.logoDataUrl,
+          merchantDisplayName: existingConcept.merchantDisplayName || merchant.name,
+          signalId: primarySignal?.id ?? existingConcept.signalId,
+          capabilityId: capability?.id ?? existingConcept.capabilityId,
+          reviewed: false,
+          updatedAt: now,
+        };
+
+        const basePipeline = current.pipeline[merchantId] ?? defaultPipeline();
+        const pipeline: PipelineEntry = {
+          ...basePipeline,
+          stage: "concept_ready",
+          queuedAt: undefined,
+          queuedSignal: undefined,
+          nextAction: "Refine the generated card, then build the brief and outreach",
+          updatedAt: now,
+        };
+
+        return touch({
+          ...current,
+          merchants: match ? current.merchants : [...current.merchants, merchant],
+          activeMerchantId: merchantId,
+          signalsByMerchant: { ...current.signalsByMerchant, [merchantId]: signals },
+          briefs: current.briefs[merchantId]
+            ? current.briefs
+            : { ...current.briefs, [merchantId]: emptyBrief() },
+          positioning: {
+            ...current.positioning,
+            [merchantId]: {
+              ...positioning,
+              angle: input.angle,
+              capabilityIds:
+                positioning.capabilityIds.length > 0
+                  ? positioning.capabilityIds
+                  : capability
+                    ? [capability.id]
+                    : [],
+              reviewed: false,
+              updatedAt: now,
+            },
+          },
+          concepts: { ...current.concepts, [merchantId]: concept },
+          outreach: current.outreach[merchantId]
+            ? current.outreach
+            : { ...current.outreach, [merchantId]: emptyOutreach() },
+          pipeline: { ...current.pipeline, [merchantId]: pipeline },
+        });
+      });
+
+      return { merchantId: existing?.id ?? newMerchantId, created: !existing };
+    },
+    [state],
+  );
+
   const dequeueCoBrand = useCallback((merchantId: string) => {
     setState((current) => {
       const base = current.pipeline[merchantId];
@@ -861,6 +998,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
     addSourcedMerchant,
     addSignalsToMerchant,
     queueCoBrand,
+    generateCoBrandCard,
     dequeueCoBrand,
     updateMerchant,
     deleteMerchant,

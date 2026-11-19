@@ -89,6 +89,16 @@ function prospectItems(source: "public" | "clay"): FeedItem[] {
   );
 }
 
+/**
+ * A brand leaves the stream once a co-brand card exists for it: the signal has
+ * been used, and the card now lives in the co-brand boards.
+ */
+export function hasCoBrandCard(state: WorkspaceState, item: FeedItem): boolean {
+  const merchant = findFeedMerchant(state, item);
+  const concept = merchant ? state.concepts[merchant.id] : undefined;
+  return Boolean(concept && (concept.headline.trim() || concept.imageUrl));
+}
+
 export function buildFeed(state: WorkspaceState): FeedItem[] {
   const groups = [prospectItems("public"), demoItems(state), prospectItems("clay")];
   const mixed: FeedItem[] = [];
@@ -98,7 +108,7 @@ export function buildFeed(state: WorkspaceState): FeedItem[] {
       if (group[index]) mixed.push(group[index]);
     }
   }
-  return mixed;
+  return mixed.filter((item) => !hasCoBrandCard(state, item));
 }
 
 export function findFeedMerchant(state: WorkspaceState, item: FeedItem): Merchant | undefined {

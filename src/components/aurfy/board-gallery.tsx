@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ArrowRight, ChevronLeft, ChevronRight, Sparkles } from "lucide-react";
 import type { Capability, ConceptDraft, Merchant, PipelineEntry, Signal } from "@/aurfy/types";
 import { STAGES } from "@/aurfy/content";
@@ -23,13 +23,21 @@ export function BoardGallery({
   boards,
   onOpen,
   onStream,
+  focusMerchantId,
 }: {
   boards: BoardData[];
   onOpen: (merchantId: string, hasConcept: boolean) => void;
   onStream: () => void;
+  focusMerchantId?: string | null;
 }) {
   const [index, setIndex] = useState(0);
   const pointerStart = useRef<{ x: number; y: number } | null>(null);
+  const focusIndex = focusMerchantId ? boards.findIndex((item) => item.merchant.id === focusMerchantId) : -1;
+
+  useEffect(() => {
+    if (focusIndex >= 0) setIndex(focusIndex);
+  }, [focusIndex]);
+
   const total = boards.length;
   const activeIndex = total > 0 ? ((index % total) + total) % total : 0;
   const board = boards[activeIndex];
@@ -51,7 +59,7 @@ export function BoardGallery({
           <Sparkles className="h-5 w-5 text-accent" aria-hidden="true" />
           <p className="mt-3 font-display text-2xl text-primary-foreground">No boards in orbit yet.</p>
           <p className="mt-1 max-w-sm text-[11px] leading-relaxed text-primary-foreground/45">
-            Queue a signal from the stream, or pull a live company page, to start a co-brand.
+            Generate a card from a signal in the stream, or pull a live company page, to start a co-brand.
           </p>
           <div className="mt-4">
             <Button type="button" className="min-h-10" onClick={onStream}>
@@ -160,9 +168,9 @@ export function BoardGallery({
                       <p className="mt-0.5 truncate text-[10px] text-primary-foreground/40">{board.merchant.category}</p>
                     </div>
                   </div>
-                  <p className="mt-8 font-mono-label text-[8px] text-accent">queued co-brand</p>
+                  <p className="mt-8 font-mono-label text-[8px] text-accent">co-brand board</p>
                   <p className="mt-2 max-w-[24ch] font-display text-[28px] leading-[1.08] text-primary-foreground">
-                    A board is queued, but the concept has not been drawn yet.
+                    This co-brand is waiting for its card.
                   </p>
                   <div className="mt-4 rounded-xl border border-primary-foreground/10 bg-primary-foreground/5 p-3">
                     <p className="font-mono-label text-[8px] text-primary-foreground/35">queued from</p>

@@ -4,11 +4,11 @@ import {
   ArrowDown,
   ArrowRight,
   ExternalLink,
-  ListChecks,
+  LayoutGrid,
+  LayoutTemplate,
   Menu,
   Pause,
   Play,
-  Plus,
   Radar,
   ShieldCheck,
   Sparkles,
@@ -17,6 +17,7 @@ import { toast } from "sonner";
 import { useStudio } from "@/aurfy/store";
 import { buildFeed, findFeedMerchant, type FeedItem } from "@/aurfy/feed";
 import { ANGLES, CONCEPT_PALETTES } from "@/aurfy/content";
+import type { ConceptLayoutId } from "@/aurfy/types";
 import { formatDate, hostOf, merchantSourceMeta } from "@/aurfy/utils";
 import { cn } from "@/lib/utils";
 import { BrandMark } from "@/components/aurfy/brand";
@@ -41,6 +42,18 @@ const STARS = Array.from({ length: 86 }, (_, index) => ({
   delay: (index % 11) * 0.55,
   opacity: 0.18 + (index % 5) * 0.1,
 }));
+
+const CARD_LAYOUTS: ConceptLayoutId[] = ["editorial", "cover", "type", "poster", "split"];
+
+/** Deterministic art direction so a generated card is complete on the first tap. */
+function layoutFor(item: Pick<FeedItem, "palette" | "brand">): ConceptLayoutId {
+  const paletteIndex = Math.max(
+    0,
+    CONCEPT_PALETTES.findIndex((option) => option.id === item.palette),
+  );
+  const brandSeed = item.brand.split("").reduce((total, character) => total + character.charCodeAt(0), 0);
+  return CARD_LAYOUTS[(paletteIndex + brandSeed) % CARD_LAYOUTS.length];
+}
 
 function makeInitial(pool: FeedItem[]): StreamEntry[] {
   const start = Date.now();
@@ -152,13 +165,14 @@ function Cosmos() {
 
 
 export default function SignalFeed() {
-  const { state, queueCoBrand, dequeueCoBrand, setActiveMerchant } = useStudio();
+  const { state, generateCoBrandCard, dequeueCoBrand, setActiveMerchant } = useStudio();
   const navigate = useNavigate();
   const feedRef = useRef<HTMLDivElement>(null);
   const canAutoRef = useRef(false);
   const [mode, setMode] = useState<ViewMode>("boards");
   const [selected, setSelected] = useState<FeedItem | null>(null);
-  const [queueOpen, setQueueOpen] = useState(false);
+  const [cardsOpen, setCardsOpen] = useState(false);
+  const [lastCardId, setLastCardId] = useState<string | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const [playing, setPlaying] = useState(true);
   const [autoScroll, setAutoScroll] = useState(false);
@@ -169,15 +183,6 @@ export default function SignalFeed() {
     const pool = buildFeed(state);
     return { pool, visible: makeInitial(pool), cursor: Math.min(6, pool.length) };
   });
-
-  const queued = useMemo(
-    () =>
-      state.merchants
-        .map((merchant) => ({ merchant, pipeline: state.pipeline[merchant.id] }))
-        .filter(({ pipeline }) => Boolean(pipeline?.queuedAt))
-        .sort((a, b) => (b.pipeline?.queuedAt ?? "").localeCompare(a.pipeline?.queuedAt ?? "")),
-    [state],
-  );
 
   useEffect(() => {
     document.title = "Aurfy — signal universe";
@@ -196,7 +201,7 @@ export default function SignalFeed() {
   // New surfaces keep arriving from the labeled pool. This is a presentation
   // simulation, not live social listening.
   useEffect(() => {
-    if (mode !== "stream" || !playing || selected || queueOpen || menuOpen) return;
+    if (mode !== "stream" || !playing || selected || cardsOpen || menuOpen) return;
     const timer = window.setInterval(() => {
       setStream((current) => {
         if (current.pool.length === 0) return current;
@@ -216,17 +221,17 @@ export default function SignalFeed() {
       setPendingNew((count) => count + 1);
     }, 8000);
     return () => window.clearInterval(timer);
-  }, [mode, playing, selected, queueOpen, menuOpen]);
+  }, [mode, playing, selected, cardsOpen, menuOpen]);
 
   useEffect(() => {
-    if (mode !== "stream" || !playing || !autoScroll || selected || queueOpen || menuOpen || focusPaused) return;
+    if (mode !== "stream" || !playing || !autoScroll || selected || cardsOpen || menuOpen || focusPaused) return;
     const timer = window.setInterval(() => {
       const element = feedRef.current;
       if (!element) return;
       element.scrollTop += 1;
     }, 45);
     return () => window.clearInterval(timer);
-  }, [mode, playing, autoScroll, selected, queueOpen, menuOpen, focusPaused]);
+  }, [mode, playing, autoScroll, selected, cardsOpen, menuOpen, focusPaused]);
 
   const boards = useMemo(
     () =>
@@ -265,10 +270,20 @@ export default function SignalFeed() {
     [state],
   );
 
+  const recentCards = useMemo(
+    () =>
+      [...boards].sort((a, b) =>
+        (b.concept?.updatedAt ?? b.pipeline?.updatedAt ?? "").localeCompare(
+          a.concept?.updatedAt ?? a.pipeline?.updatedAt ?? "",
+        ),
+      ),
+    [boards],
+  );
+
   const switchMode = (next: ViewMode) => {
     setMode(next);
     setSelected(null);
-    setQueueOpen(false);
+    setCardsOpen(false);
     setAutoScroll(next === "stream" && playing && canAutoRef.current);
     feedRef.current?.scrollTo({ top: 0, behavior: "auto" });
   };
@@ -280,57 +295,65 @@ export default function SignalFeed() {
   };
 
   const merchantFor = (item: FeedItem) => findFeedMerchant(state, item);
-  const isQueued = (item: FeedItem) => {
-    const merchant = merchantFor(item);
-    return Boolean(merchant && state.pipeline[merchant.id]?.queuedAt);
-  };
 
-  const queue = (item: FeedItem) => {
+  const generateCard = (item: FeedItem) => {
     const merchant = merchantFor(item);
     const prospect = item.prospect;
-    const result = queueCoBrand({
+    const result = generateCoBrandCard({
       merchantId: item.merchantId,
-      logoUrl: item.prospect?.logo ?? null,
+      logoUrl: item.logoUrl,
       name: item.brand,
       url: prospect?.url ?? merchant?.url ?? "",
       category: item.category,
       notes:
         item.source === "demo"
-          ? "Queued from the signal universe. Fictional demo signal."
+          ? "Card generated from the signal universe. Fictional demo signal."
           : item.source === "clay"
-            ? "Queued from the signal universe. Simulated Clay record; company, enrichment and signals are synthetic."
-            : "Queued from the signal universe. Public snapshot; not independently audited. No partnership implied.",
+            ? "Card generated from the signal universe. Simulated Clay record; company, enrichment and signals are synthetic."
+            : "Card generated from the signal universe. Public snapshot; not independently audited. No partnership implied.",
       recordSource: item.source === "clay" ? "clay_simulated" : item.source === "public" ? "public" : "demo",
       isDemo: item.source === "demo",
       signalTitle: item.signal.title,
-      signals: prospect?.signals ?? [],
+      signals: prospect?.signals ?? [item.signal],
+      angle: item.angle,
+      palette: item.palette,
+      fontId: item.fontId,
+      layout: layoutFor(item),
     });
+
+    // The signal has become a card, so it and its brand leave the stream now.
+    setStream((current) => ({
+      pool: current.pool.filter((entry) => entry.brandKey !== item.brandKey),
+      visible: current.visible.filter((entry) => entry.item.brandKey !== item.brandKey),
+      cursor: 0,
+    }));
     setSelected(null);
-    setQueueOpen(true);
-    setPlaying(false);
-    setAutoScroll(false);
-    toast.success(result.created ? `${item.brand} queued for a co-brand` : "Co-brand queue updated", {
-      description: "The signal is marked in the workspace. Nothing has been sent or published.",
+    toast.success(`${item.brand} card generated`, {
+      description: "It is in your co-brand boards. Open the workspace from the card when you are ready; nothing was sent.",
+      action: {
+        label: "View card",
+        onClick: () => {
+          setLastCardId(result.merchantId);
+          switchMode("boards");
+        },
+      },
     });
   };
 
-  const openQueued = (merchantId: string) => {
+  const openWorkspace = (merchantId: string) => {
     const merchant = state.merchants.find((entry) => entry.id === merchantId);
     if (!merchant) return;
     const positioning = state.positioning[merchantId];
     const ready = Boolean(positioning?.angle && (positioning.capabilityIds?.length ?? 0) > 0);
     setActiveMerchant(merchantId);
+    setLastCardId(merchantId);
     dequeueCoBrand(merchantId);
-    setQueueOpen(false);
+    setCardsOpen(false);
+    setSelected(null);
     navigate(ready ? "/concept" : "/signals");
     toast.info(`Opening ${merchant.name}`, {
-      description: ready ? "The co-brand is ready to edit." : "Start with the imported signals, then build the brief and positioning.",
+      description: ready ? "The co-brand is ready to edit." : "Review the signals, then build the brief and positioning.",
     });
-  };
-
-  const removeQueued = (merchantId: string, name: string) => {
-    dequeueCoBrand(merchantId);
-    toast.success(`${name} removed from the queue`, { description: "The workspace and its signals remain available." });
   };
 
   const togglePlaying = () => {
@@ -440,7 +463,6 @@ export default function SignalFeed() {
             const item = entry.item;
             const palette = CONCEPT_PALETTES.find((option) => option.id === item.palette) ?? CONCEPT_PALETTES[0];
             const fresh = now - entry.arrivedAt < 16000;
-            const queuedItem = isQueued(item);
             return (
               <article
                 key={entry.key}
@@ -489,7 +511,6 @@ export default function SignalFeed() {
                         <span className="h-1 w-1 rounded-full" style={{ background: sourceDot(item.source) }} aria-hidden="true" />
                         {item.sourceLabel}
                       </span>
-                      {queuedItem ? <span className="text-accent/80">· queued</span> : null}
                     </div>
 
                     <button
@@ -512,11 +533,11 @@ export default function SignalFeed() {
                     <div className="mt-2 flex flex-wrap items-center gap-3 text-[10px]">
                       <button
                         type="button"
-                        onClick={() => queue(item)}
+                        onClick={() => generateCard(item)}
                         className="inline-flex min-h-10 items-center gap-1 font-semibold text-accent transition hover:text-accent/80"
                       >
-                        <Plus className="h-3.5 w-3.5" aria-hidden="true" />
-                        Queue co-brand
+                        <LayoutTemplate className="h-3.5 w-3.5" aria-hidden="true" />
+                        Generate card
                       </button>
                       <button
                         type="button"
@@ -556,13 +577,18 @@ export default function SignalFeed() {
           <div className="flex flex-col items-center gap-1.5 py-10 text-center text-[9px] leading-relaxed text-primary-foreground/35">
             <span className="inline-flex items-center gap-1.5">
               <ShieldCheck className="h-3 w-3" aria-hidden="true" />
-              Public snapshots · simulated Clay · fictional demos
+              Public snapshots · simulated Clay records
             </span>
-            <span>Arrival timing and new-brand surfacing are a demo simulation; sources are labeled.</span>
+            <span>Arrival timing and new-brand surfacing are a demo simulation; every source is labeled.</span>
           </div>
         </div>
         ) : (
-          <BoardGallery boards={boards} onOpen={openBoard} onStream={() => switchMode("stream")} />
+          <BoardGallery
+            boards={boards}
+            onOpen={openBoard}
+            onStream={() => switchMode("stream")}
+            focusMerchantId={lastCardId}
+          />
         )}
       </main>
 
@@ -580,16 +606,16 @@ export default function SignalFeed() {
       <button
         type="button"
         onClick={() => {
-          setQueueOpen(true);
+          setCardsOpen(true);
           setPlaying(false);
           setAutoScroll(false);
         }}
         className="fixed bottom-[calc(1rem+env(safe-area-inset-bottom,0px))] right-4 z-40 inline-flex min-h-12 items-center gap-2 rounded-full bg-accent px-4 text-accent-foreground shadow-lift transition hover:bg-accent/90"
       >
-        <ListChecks className="h-4 w-4" aria-hidden="true" />
-        <span className="text-[11px] font-bold">Queue</span>
+        <LayoutGrid className="h-4 w-4" aria-hidden="true" />
+        <span className="text-[11px] font-bold">Cards</span>
         <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-accent-foreground/15 px-1 text-[10px]">
-          {queued.length}
+          {boards.length}
         </span>
       </button>
 
@@ -620,7 +646,7 @@ export default function SignalFeed() {
             ))}
           </nav>
           <p className="text-[10px] leading-relaxed text-muted-foreground">
-            Arrivals are simulated. Public snapshots, Clay simulations and fictional demos are labeled in the stream.
+            Arrivals are simulated. Public snapshots and Clay simulations are labeled; cards stay in this browser.
           </p>
         </DialogContent>
       </Dialog>
@@ -700,53 +726,40 @@ export default function SignalFeed() {
               </div>
 
               <div className="grid gap-2 sm:grid-cols-2">
-                {isQueued(selected) ? (
-                  <Button
-                    type="button"
-                    className="tap min-h-11"
-                    onClick={() => {
-                      setSelected(null);
-                      setQueueOpen(true);
-                    }}
-                  >
-                    View co-brand queue
-                    <ArrowRight className="h-4 w-4" />
-                  </Button>
-                ) : (
-                  <Button type="button" className="tap min-h-11" onClick={() => queue(selected)}>
-                    <Radar className="h-4 w-4" />
-                    Queue this co-brand
-                  </Button>
-                )}
+                <Button type="button" className="tap min-h-11" onClick={() => generateCard(selected)}>
+                  <LayoutTemplate className="h-4 w-4" />
+                  Generate this card
+                </Button>
                 <Button type="button" variant="outline" className="tap min-h-11" onClick={() => setSelected(null)}>
                   Keep browsing
                 </Button>
               </div>
               <p className="text-[10px] leading-relaxed text-muted-foreground">
-                Queueing creates a local workspace and selects this signal. No outreach, post or partnership action happens automatically.
+                Generating draws the co-brand card instantly and adds it to your boards. Opening its workspace is optional; nothing
+                is sent, posted or claimed as a partnership.
               </p>
             </>
           ) : null}
         </DialogContent>
       </Dialog>
 
-      {/* Queue */}
-      <Dialog open={queueOpen} onOpenChange={setQueueOpen}>
+      {/* Generated cards */}
+      <Dialog open={cardsOpen} onOpenChange={setCardsOpen}>
         <DialogContent className="max-h-[88dvh] overflow-y-auto sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Co-brand queue</DialogTitle>
+            <DialogTitle>Co-brand cards</DialogTitle>
             <DialogDescription>
-              Queued in this browser. Open one to start its workspace; nothing is sent or published.
+              Generated in this browser. Open one to continue its workspace; nothing is sent or published.
             </DialogDescription>
           </DialogHeader>
 
-          {queued.length === 0 ? (
+          {boards.length === 0 ? (
             <div className="rounded-xl border border-dashed border-border bg-muted/40 p-4 text-center text-[11.5px] leading-relaxed text-muted-foreground">
-              The queue is empty. Tap a signal in the stream to add a co-brand.
+              No cards yet. Generate one from a signal and it lands here instead of staying in the stream.
             </div>
           ) : (
             <ul className="space-y-2">
-              {queued.map(({ merchant, pipeline }) => {
+              {recentCards.map(({ merchant, concept, pipeline }) => {
                 const meta = merchantSourceMeta(merchant);
                 return (
                   <li key={merchant.id} className="rounded-xl border border-border bg-card p-3">
@@ -757,25 +770,20 @@ export default function SignalFeed() {
                       </div>
                       <Pill tone={meta.tone}>{meta.label}</Pill>
                     </div>
-                    {pipeline?.queuedSignal ? (
+                    {concept?.headline?.trim() ? (
+                      <p className="mt-2 line-clamp-2 font-display text-[15px] leading-snug text-foreground">
+                        {concept.headline}
+                      </p>
+                    ) : pipeline?.queuedSignal ? (
                       <p className="mt-2 line-clamp-2 text-[11px] leading-relaxed text-ink-soft">
                         <span className="font-semibold">Signal: </span>
                         {pipeline.queuedSignal}
                       </p>
                     ) : null}
-                    <div className="mt-2 flex flex-wrap gap-2">
-                      <Button type="button" size="sm" className="min-h-9" onClick={() => openQueued(merchant.id)}>
+                    <div className="mt-2">
+                      <Button type="button" size="sm" className="min-h-9" onClick={() => openWorkspace(merchant.id)}>
                         Open workspace
                         <ArrowRight className="h-3.5 w-3.5" />
-                      </Button>
-                      <Button
-                        type="button"
-                        size="sm"
-                        variant="ghost"
-                        className="min-h-9 text-muted-foreground"
-                        onClick={() => removeQueued(merchant.id, merchant.name)}
-                      >
-                        Remove
                       </Button>
                     </div>
                   </li>
@@ -791,7 +799,7 @@ export default function SignalFeed() {
             </Link>
           </Button>
           <p className="text-[10px] leading-relaxed text-muted-foreground">
-            Public and live sources are labeled; Clay records are simulated. Queueing is a local action only.
+            Public and live sources are labeled; Clay records are simulated. Cards and workspaces stay in this browser only.
           </p>
         </DialogContent>
       </Dialog>
