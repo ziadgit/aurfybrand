@@ -384,72 +384,83 @@ export default function SignalFeed() {
     <div className="relative flex h-[100dvh] flex-col overflow-hidden bg-cosmos text-primary-foreground">
       <Cosmos />
 
-      <header className="safe-top relative z-30 flex items-center gap-2.5 px-4 pb-1 pt-3 sm:px-6">
-        <Link to="/" aria-label="Aurfy signal universe" className="flex items-center gap-2 rounded-xl">
-          <BrandMark className="h-7 w-7" />
-          <span className="flex flex-col leading-none">
-            <span className="text-[12px] font-semibold tracking-tight text-primary-foreground">Aurfy</span>
-            <span className="font-mono-label mt-0.5 text-[7px] text-primary-foreground/40">signal universe</span>
-          </span>
-        </Link>
-        <div className="ml-auto flex items-center gap-1">
-          <button
-            type="button"
-            onClick={() => setMenuOpen(true)}
-            className="flex h-10 w-10 items-center justify-center rounded-full text-primary-foreground/60 transition hover:bg-primary-foreground/10 hover:text-primary-foreground"
-            aria-label="Open Aurfy menu"
-          >
-            <Menu className="h-4 w-4" />
-          </button>
-        </div>
-      </header>
-
-      <div className="relative z-20 flex items-center gap-2 px-4 pb-3 sm:px-6">
-        <div className="flex shrink-0 rounded-full border border-primary-foreground/10 bg-primary-foreground/5 p-0.5">
-          <button
-            type="button"
-            aria-pressed={mode === "boards"}
-            onClick={() => switchMode("boards")}
-            className={cn(
-              "inline-flex min-h-9 items-center gap-1 rounded-full px-2.5 text-[9.5px] font-semibold capitalize transition",
-              mode === "boards" ? "bg-primary-foreground/10 text-primary-foreground" : "text-primary-foreground/40 hover:text-primary-foreground/70",
-            )}
-          >
-            co-brands
-            <span className={cn("rounded-full px-1 text-[8px]", mode === "boards" ? "bg-accent/20 text-accent" : "text-primary-foreground/30")}>
-              {boards.length}
+      {/* The header floats over the feed: cards scroll beneath it and stay
+          visible through a soft, transparent fade instead of a hard cut. */}
+      <div className="pointer-events-none absolute inset-x-0 top-0 z-30">
+        <div
+          aria-hidden="true"
+          className="absolute inset-x-0 top-0 h-[calc(7rem+env(safe-area-inset-top,0px))]"
+          style={{
+            background:
+              "linear-gradient(180deg, hsl(var(--cosmos) / 0.96) 0%, hsl(var(--cosmos) / 0.88) 38%, hsl(var(--cosmos) / 0.5) 72%, transparent 100%)",
+          }}
+        />
+        <header className="safe-top pointer-events-auto relative flex items-center gap-2.5 px-4 pb-1 pt-3 sm:px-6">
+          <Link to="/" aria-label="Aurfy signal universe" className="flex items-center gap-2 rounded-xl">
+            <BrandMark className="h-7 w-7" />
+            <span className="flex flex-col leading-none">
+              <span className="text-[12px] font-semibold tracking-tight text-primary-foreground">Aurfy</span>
+              <span className="font-mono-label mt-0.5 text-[7px] text-primary-foreground/40">signal universe</span>
             </span>
-          </button>
-          <button
-            type="button"
-            aria-pressed={mode === "stream"}
-            onClick={() => switchMode("stream")}
-            className={cn(
-              "inline-flex min-h-9 items-center gap-1 rounded-full px-2.5 text-[9.5px] font-semibold capitalize transition",
-              mode === "stream" ? "bg-primary-foreground/10 text-primary-foreground" : "text-primary-foreground/40 hover:text-primary-foreground/70",
-            )}
-          >
-            stream
-          </button>
+          </Link>
+          <div className="ml-auto flex items-center gap-1">
+            <button
+              type="button"
+              onClick={() => setMenuOpen(true)}
+              className="flex h-10 w-10 items-center justify-center rounded-full text-primary-foreground/60 transition hover:bg-primary-foreground/10 hover:text-primary-foreground"
+              aria-label="Open Aurfy menu"
+            >
+              <Menu className="h-4 w-4" />
+            </button>
+          </div>
+        </header>
+
+        <div className="pointer-events-auto relative flex items-center gap-2 px-4 pb-3 sm:px-6">
+          <div className="flex shrink-0 rounded-full border border-primary-foreground/10 bg-primary-foreground/5 p-0.5">
+            <button
+              type="button"
+              aria-pressed={mode === "boards"}
+              onClick={() => switchMode("boards")}
+              className={cn(
+                "inline-flex min-h-9 items-center gap-1 rounded-full px-2.5 text-[9.5px] font-semibold capitalize transition",
+                mode === "boards" ? "bg-primary-foreground/10 text-primary-foreground" : "text-primary-foreground/40 hover:text-primary-foreground/70",
+              )}
+            >
+              co-brands
+              <span className={cn("rounded-full px-1 text-[8px]", mode === "boards" ? "bg-accent/20 text-accent" : "text-primary-foreground/30")}>
+                {boards.length}
+              </span>
+            </button>
+            <button
+              type="button"
+              aria-pressed={mode === "stream"}
+              onClick={() => switchMode("stream")}
+              className={cn(
+                "inline-flex min-h-9 items-center gap-1 rounded-full px-2.5 text-[9.5px] font-semibold capitalize transition",
+                mode === "stream" ? "bg-primary-foreground/10 text-primary-foreground" : "text-primary-foreground/40 hover:text-primary-foreground/70",
+              )}
+            >
+              stream
+            </button>
+          </div>
+
+          {mode === "stream" ? (
+            <button
+              type="button"
+              onClick={togglePlaying}
+              className="flex h-9 w-9 items-center justify-center rounded-full text-primary-foreground/50 transition hover:bg-primary-foreground/10 hover:text-primary-foreground"
+              aria-label={playing ? "Pause stream" : "Play stream"}
+              title={playing ? "Pause stream" : "Play stream"}
+            >
+              {playing ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
+            </button>
+          ) : null}
         </div>
-
-        {mode === "stream" ? (
-          <button
-            type="button"
-            onClick={togglePlaying}
-            className="flex h-9 w-9 items-center justify-center rounded-full text-primary-foreground/50 transition hover:bg-primary-foreground/10 hover:text-primary-foreground"
-            aria-label={playing ? "Pause stream" : "Play stream"}
-            title={playing ? "Pause stream" : "Play stream"}
-          >
-            {playing ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
-          </button>
-        ) : null}
-
       </div>
 
       <main
         ref={feedRef}
-        className="no-scrollbar relative z-10 min-h-0 flex-1 overflow-y-auto"
+        className="no-scrollbar relative z-10 min-h-0 flex-1 overflow-y-auto pt-[calc(7rem+env(safe-area-inset-top,0px))]"
         onFocusCapture={() => setFocusPaused(true)}
         onBlurCapture={() => setFocusPaused(false)}
         onWheel={() => setAutoScroll(false)}
