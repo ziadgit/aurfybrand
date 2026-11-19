@@ -143,13 +143,16 @@ function Cosmos() {
         />
       ))}
       <div
-        className="absolute -right-36 -top-40 h-[30rem] w-[30rem] rounded-full opacity-60 sm:-right-20 sm:-top-48 sm:h-[38rem] sm:w-[38rem]"
+        className="absolute -right-40 -top-48 h-[32rem] w-[32rem] rounded-full sm:-right-24 sm:-top-56 sm:h-[40rem] sm:w-[40rem]"
         style={{
-          background: "radial-gradient(circle at 34% 30%, hsl(258 60% 34%) 0%, hsl(258 55% 18%) 42%, hsl(240 50% 7%) 72%)",
-          boxShadow: "inset -40px -30px 80px hsl(240 60% 4% / 0.9), 0 0 90px hsl(258 80% 45% / 0.18)",
+          background:
+            "radial-gradient(circle at 36% 30%, hsl(258 76% 64% / 0.24) 0%, hsl(258 66% 46% / 0.17) 30%, hsl(258 56% 30% / 0.1) 52%, hsl(250 46% 16% / 0.04) 70%, transparent 82%)",
+          boxShadow: "inset -26px -22px 64px hsl(250 60% 8% / 0.22), 0 0 110px hsl(258 80% 58% / 0.12)",
+          WebkitMaskImage: "linear-gradient(180deg, #000 0%, #000 46%, transparent 88%)",
+          maskImage: "linear-gradient(180deg, #000 0%, #000 46%, transparent 88%)",
         }}
       />
-      <div className="cosmos-orbit absolute -right-24 -top-24 h-[24rem] w-[38rem] rounded-[50%] border border-primary-foreground/10 sm:-right-10 sm:-top-20 sm:h-[30rem] sm:w-[48rem]" />
+      <div className="cosmos-orbit absolute -right-24 -top-24 h-[24rem] w-[38rem] rounded-[50%] border border-primary-foreground/[0.06] sm:-right-10 sm:-top-20 sm:h-[30rem] sm:w-[48rem]" />
       <div className="cosmos-orbit absolute -left-40 bottom-[-14rem] h-[30rem] w-[30rem] rounded-full border border-accent/10">
         <span className="absolute left-1/2 top-0 h-1.5 w-1.5 -translate-x-1/2 rounded-full bg-accent/70" />
       </div>
