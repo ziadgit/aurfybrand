@@ -17,9 +17,49 @@ A human-in-the-loop go-to-market studio for B2B payments teams: watch a live str
 [![PWA](https://img.shields.io/badge/PWA-installable-5A0FC8?logo=pwa&logoColor=white)](#installable-and-offline-friendly)
 [![Built with Enter.pro](https://img.shields.io/badge/Built%20with-Enter.pro-FC5776?labelColor=1F1F1F)](https://enter.pro)
 
-[**Live demo**](#) · [The problem](#the-problem) · [How it works](#how-it-works) · [Architecture](#architecture) · [Run it locally](#run-it-locally)
+[**Live demo**](#) · [Screenshots](#screenshots) · [The problem](#the-problem) · [How it works](#how-it-works) · [Architecture](#architecture) · [Run it locally](#run-it-locally)
+
+<br/>
+
+<img src="docs/screenshots/boards-desktop.png" alt="Co-brand boards: a swipeable gallery of illustrative merchant × Aurfy concepts" width="900" />
 
 </div>
+
+---
+
+## Screenshots
+
+### Find the signal, imagine the co-brand
+
+| Signal stream | One tap: signal → co-brand card |
+|---|---|
+| ![Live signal stream with provenance labels and Generate card actions](docs/screenshots/stream-desktop.png) | ![A generated Verve Coffee Roasters × Aurfy concept card with a designed signal study](docs/screenshots/generated-card.png) |
+| Every signal shows where it came from: public snapshot, simulated Clay, fictional demo. | "Generate card" builds the headline, angle, capability, type and artwork, then removes the signal from the stream. |
+
+| Prospect engine | Co-brand deck |
+|---|---|
+| ![Prospect engine with live public page fetch and news lookup](docs/screenshots/prospects-desktop.png) | ![Co-brand deck showing the Marlow & Fen concept](docs/screenshots/deck-desktop.png) |
+| Pull any public company page or recent headlines into the studio, or scan the bundled prospect set. | `/deck` presents finished concepts as a swipeable showcase. |
+
+### The seven-step studio
+
+| Signals: evidence with its limits attached | Positioning: one angle, approved words only |
+|---|---|
+| ![Signals feed with filters, working set and provenance badges](docs/screenshots/signals-desktop.png) | ![Positioning step with three fixed angles](docs/screenshots/positioning-desktop.png) |
+| **Brief: separate what you saw from what you think** | **Concept: an illustrative idea, clearly framed** |
+| ![Merchant brief with observed, hypotheses and unknowns](docs/screenshots/brief-desktop.png) | ![Concept editor with live preview and editable card content](docs/screenshots/concept-desktop.png) |
+| **Outreach: a short note, copied by a human** | **Pipeline: every stage is a human decision** |
+| ![Outreach draft in four parts with a manual copy preview and no send button](docs/screenshots/outreach-desktop.png) | ![Pipeline dashboard with stage counts, overdue and due-soon tracking](docs/screenshots/pipeline-desktop.png) |
+
+### Built for the phone
+
+<p align="center">
+  <img src="docs/screenshots/feed-mobile.png" alt="Co-brand boards on mobile" width="240" />
+  &nbsp;
+  <img src="docs/screenshots/deck-mobile.png" alt="Concept deck on mobile" width="240" />
+  &nbsp;
+  <img src="docs/screenshots/pipeline-mobile.png" alt="Pipeline with mobile bottom navigation" width="240" />
+</p>
 
 ---
 
