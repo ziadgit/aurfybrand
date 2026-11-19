@@ -17,7 +17,7 @@ A human-in-the-loop go-to-market studio for B2B payments teams: watch a live str
 [![PWA](https://img.shields.io/badge/PWA-installable-5A0FC8?logo=pwa&logoColor=white)](#installable-and-offline-friendly)
 [![Built with Enter.pro](https://img.shields.io/badge/Built%20with-Enter.pro-FC5776?labelColor=1F1F1F)](https://enter.pro)
 
-[**Live demo**](#) · [Screenshots](#screenshots) · [The problem](#the-problem) · [How it works](#how-it-works) · [Architecture](#architecture) · [Run it locally](#run-it-locally)
+[**Live demo**](https://d14079b4625f4011bd68f5b82bd7bf6a.prod.enter.pro/) · [Screenshots](#screenshots) · [The problem](#the-problem) · [How it works](#how-it-works) · [Architecture](#architecture) · [Run it locally](#run-it-locally)
 
 <br/>
 
