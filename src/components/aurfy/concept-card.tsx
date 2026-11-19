@@ -1,19 +1,12 @@
 import { useState } from "react";
-import {
-  Check,
-  Coffee,
-  Globe,
-  ShoppingBasket,
-  Sparkles,
-  Smartphone,
-  Store,
-  Waves,
-} from "lucide-react";
+import { Check, Globe, Smartphone, Sparkles, Store } from "lucide-react";
 import type { ConceptFontId, ConceptLayoutId, ConceptPaletteId } from "@/aurfy/types";
 import { CONCEPT_FONTS, CONCEPT_PALETTES } from "@/aurfy/content";
 import { clampText } from "@/aurfy/utils";
 import { cn } from "@/lib/utils";
 import { BrandMark } from "./brand";
+import { BrandCrest, ConceptArtwork } from "./concept-art";
+import { categoryGlyph } from "@/aurfy/category-glyph";
 
 export const CONCEPT_DISCLAIMER = "Illustrative concept for discussion. No partnership implied.";
 
@@ -43,14 +36,6 @@ type ConceptCardProps = {
 
 function fontFor(id?: ConceptFontId) {
   return CONCEPT_FONTS.find((font) => font.id === id) ?? CONCEPT_FONTS[0];
-}
-
-function categoryIcon(category?: string) {
-  const value = (category ?? "").toLowerCase();
-  if (value.includes("coffee") || value.includes("café") || value.includes("cafe")) return Coffee;
-  if (value.includes("swim") || value.includes("beach")) return Waves;
-  if (value.includes("grocer") || value.includes("market")) return ShoppingBasket;
-  return Store;
 }
 
 function Journey({ accent, ink }: { accent: string; ink: string }) {
@@ -111,7 +96,7 @@ export function ConceptCard({
   const [failedUrl, setFailedUrl] = useState<string | null>(null);
   const hasImage = Boolean(imageUrl) && !redacted && failedUrl !== imageUrl;
   const showLogo = Boolean(logoUrl) && !redacted;
-  const CategoryIcon = categoryIcon(category);
+  const CategoryIcon = categoryGlyph(category);
   const monogram = (initials || merchantName.slice(0, 2)).toUpperCase();
 
   const headlineStyle = {
@@ -121,27 +106,14 @@ export function ConceptCard({
   } as const;
 
   const Logo = ({ size = "md" }: { size?: "sm" | "md" }) => (
-    <span
-      className={cn(
-        "relative flex shrink-0 items-center justify-center overflow-hidden rounded-2xl",
-        size === "sm" ? "h-9 w-9" : "h-10 w-10",
-      )}
-      style={{ background: "hsl(45 40% 97%)" }}
-    >
-      <span className="text-[12px] font-bold" style={{ color: "hsl(234 30% 15%)" }} aria-hidden="true">
-        {monogram}
-      </span>
-      {showLogo ? (
-        <img
-          src={logoUrl ?? ""}
-          alt={`${merchantName} logo`}
-          className="absolute inset-0 h-full w-full object-contain p-1"
-          onError={(event) => {
-            event.currentTarget.style.display = "none";
-          }}
-        />
-      ) : null}
-    </span>
+    <BrandCrest
+      name={merchantName}
+      initials={initials ?? ""}
+      logoUrl={logoUrl}
+      accent={palette.accent}
+      showLogo={showLogo}
+      size={size}
+    />
   );
 
   const Chips = ({ onImage = false }: { onImage?: boolean }) => (
@@ -268,30 +240,13 @@ export function ConceptCard({
     );
   };
 
-  const Pattern = ({ compact = false }: { compact?: boolean }) => (
-    <div className="absolute inset-0 overflow-hidden" style={{ background: palette.panel }}>
-      <svg
-        className={cn("absolute -right-8 -top-10 opacity-20", compact ? "h-40 w-40" : "h-56 w-56")}
-        viewBox="0 0 200 200"
-        fill="none"
-        aria-hidden="true"
-      >
-        <g stroke={palette.accent} strokeWidth="4" strokeLinecap="round">
-          <path d="M30 160a60 60 0 0 1 60-60" />
-          <path d="M30 118a102 102 0 0 1 102 102" />
-          <path d="M30 76a144 144 0 0 1 144 144" />
-        </g>
-      </svg>
-      <CategoryIcon
-        className="absolute -bottom-8 -left-6 h-40 w-40 opacity-[0.09]"
-        style={{ color: palette.ink }}
-        aria-hidden="true"
-      />
-      <span className="absolute left-4 top-12 inline-flex items-center gap-1.5 text-[9px]" style={{ color: palette.ink, opacity: 0.5 }}>
-        <BrandMark className="h-4 w-4" />
-        Concept visual
-      </span>
-    </div>
+  const Pattern = () => (
+    <ConceptArtwork
+      brand={merchantName}
+      initials={monogram}
+      category={category}
+      palette={palette}
+    />
   );
 
   const ImageLayer = () =>

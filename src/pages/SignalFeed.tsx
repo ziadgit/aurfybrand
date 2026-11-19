@@ -43,7 +43,7 @@ const STARS = Array.from({ length: 86 }, (_, index) => ({
   opacity: 0.18 + (index % 5) * 0.1,
 }));
 
-const CARD_LAYOUTS: ConceptLayoutId[] = ["editorial", "cover", "type", "poster", "split"];
+const CARD_LAYOUTS: ConceptLayoutId[] = ["editorial", "cover", "poster", "split"];
 
 /** Deterministic art direction so a generated card is complete on the first tap. */
 function layoutFor(item: Pick<FeedItem, "palette" | "brand">): ConceptLayoutId {
