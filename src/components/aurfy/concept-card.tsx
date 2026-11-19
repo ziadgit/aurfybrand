@@ -1,11 +1,30 @@
 import { useState } from "react";
-import { Check, Globe, Smartphone, Sparkles, Store } from "lucide-react";
+import {
+  Check,
+  CreditCard,
+  FileText,
+  Gauge,
+  Globe,
+  Landmark,
+  Plane,
+  Receipt,
+  Repeat,
+  ShoppingBag,
+  Smartphone,
+  Sparkles,
+  Split,
+  Store,
+  Users,
+  Wallet,
+  type LucideIcon,
+} from "lucide-react";
 import type { ConceptFontId, ConceptLayoutId, ConceptPaletteId } from "@/aurfy/types";
 import { CONCEPT_FONTS, CONCEPT_PALETTES } from "@/aurfy/content";
 import { clampText } from "@/aurfy/utils";
 import { cn } from "@/lib/utils";
 import { BrandMark } from "./brand";
 import { BrandCrest, ConceptArtwork } from "./concept-art";
+import { verticalId, type VerticalId } from "@/aurfy/verticals";
 import { categoryGlyph } from "@/aurfy/category-glyph";
 
 export const CONCEPT_DISCLAIMER = "Illustrative concept for discussion. No partnership implied.";
@@ -38,12 +57,41 @@ function fontFor(id?: ConceptFontId) {
   return CONCEPT_FONTS.find((font) => font.id === id) ?? CONCEPT_FONTS[0];
 }
 
-function Journey({ accent, ink }: { accent: string; ink: string }) {
-  const steps = [
+const JOURNEY_STEPS: Record<VerticalId, { label: string; icon: LucideIcon }[]> = {
+  retail: [
     { label: "App", icon: Smartphone },
     { label: "Counter", icon: Store },
     { label: "Online", icon: Globe },
-  ];
+  ],
+  travel: [
+    { label: "Book", icon: Plane },
+    { label: "Deposit", icon: CreditCard },
+    { label: "Balance", icon: Wallet },
+  ],
+  marketplace: [
+    { label: "Checkout", icon: ShoppingBag },
+    { label: "Split", icon: Split },
+    { label: "Payout", icon: Landmark },
+  ],
+  fintech: [
+    { label: "Subscribe", icon: Repeat },
+    { label: "Spend", icon: CreditCard },
+    { label: "Reconcile", icon: Landmark },
+  ],
+  ai: [
+    { label: "Seats", icon: Users },
+    { label: "Usage", icon: Gauge },
+    { label: "Invoice", icon: Receipt },
+  ],
+  saas: [
+    { label: "Contract", icon: FileText },
+    { label: "Seats", icon: Users },
+    { label: "Invoice", icon: Receipt },
+  ],
+};
+
+function Journey({ accent, ink, category }: { accent: string; ink: string; category?: string }) {
+  const steps = JOURNEY_STEPS[verticalId(category ?? "")];
   return (
     <div className="mt-4 rounded-xl border p-2.5" style={{ borderColor: OVERLAY_BORDER, background: SOFT_SURFACE }}>
       <p className="font-mono-label text-[7.5px] tracking-[0.14em]" style={{ color: ink, opacity: 0.55 }}>
@@ -389,7 +437,7 @@ export function ConceptCard({
             <p className="mt-2.5 max-w-[38ch] text-[12px] leading-relaxed" style={{ color: palette.ink, opacity: 0.84 }}>
               {subhead || "A short line connecting the merchant's observed moment to a grounded Aurfy capability."}
             </p>
-            {!redacted ? <Journey accent={palette.accent} ink={palette.ink} /> : null}
+            {!redacted ? <Journey accent={palette.accent} ink={palette.ink} category={category} /> : null}
             <CapabilityRow />
             <SignalLine />
             <Footer />
@@ -420,7 +468,7 @@ export function ConceptCard({
           {subhead || "A short line connecting the merchant's observed moment to a grounded Aurfy capability."}
         </p>
         <CapabilityRow />
-        {!redacted ? <Journey accent={palette.accent} ink={palette.ink} /> : null}
+        {!redacted ? <Journey accent={palette.accent} ink={palette.ink} category={category} /> : null}
         <SignalLine />
         <Footer />
       </div>

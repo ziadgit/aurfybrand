@@ -350,6 +350,256 @@ export const PROSPECTS: Prospect[] = [
       },
     ],
   },
+  {
+    key: "ledgerlight",
+    name: "Ledgerlight",
+    url: "https://ledgerlight.example",
+    category: "Fintech · cashflow software (simulated)",
+    summary:
+      "Synthetic Clay record: a fictional cashflow and spend platform for small businesses, sold as a monthly subscription with a commercial card programme.",
+    locations: "Remote-first, 2 hubs (simulated)",
+    channels: ["Web app", "Mobile app", "Subscription billing"],
+    source: "clay_simulated",
+    retrievedAt: null,
+    sourceUrls: [],
+    logo: null,
+    clayFields: {
+      employees: "85 (simulated)",
+      locations: "Remote-first, 2 hubs (simulated)",
+      techStack: ["Subscription billing", "Open banking data", "Data warehouse"],
+      intentTopics: ["Billing consolidation", "Card programme expansion"],
+      contactRole: "Head of Revenue Operations (simulated)",
+      recentEvent: "Launched a spend card for small teams (simulated)",
+    },
+    signals: [
+      {
+        category: "customer",
+        title: "Simulated finance teams reconcile billing and card spend separately",
+        ...clayMeta,
+        evidence:
+          "Synthetic Clay simulation: fictional support notes describe finance teams exporting subscription invoices and card transactions into one spreadsheet. No real merchant, customer or export exists.",
+        whyItMatters:
+          "Inference to test: if subscription billing and card spend sit in different systems, month-end reconciliation becomes manual. The synthetic record offers no evidence of volume or cost.",
+        novelty: "Simulated novelty rationale: the seam between billing and card spend is the question, not the product catalogue.",
+        limitations: clayLimits,
+        question: "Which system does a finance team trust for the month-end number today?",
+        tags: ["clay-simulation", "billing", "reconciliation"],
+      },
+      {
+        category: "peer",
+        title: "Simulated peer bundles billing and cards into one statement",
+        ...clayMeta,
+        evidence:
+          "Synthetic Clay simulation: a fictional cashflow peer is described as marketing one statement for subscriptions and card spend. The competitor and campaign are invented.",
+        whyItMatters:
+          "Inference to test: a combined statement may shape buyer expectations, but it says nothing about the peer's real capability or adoption.",
+        novelty: "Simulated novelty rationale: the message is about a single monthly view, not a feature list.",
+        limitations: clayLimits,
+        question: "What would a single monthly statement have to include for your finance team to rely on it?",
+        tags: ["clay-simulation", "peer", "statement"],
+      },
+    ],
+  },
+  {
+    key: "wayfarer-collective",
+    name: "Wayfarer Collective",
+    url: "https://wayfarercollective.example",
+    category: "Travel · small-group trips (simulated)",
+    summary:
+      "Synthetic Clay record: a fictional small-group travel operator taking deposits online, balancing final payments and refunds across bookings.",
+    locations: "12 destinations (simulated)",
+    channels: ["Website booking", "Deposits", "Partner agencies"],
+    source: "clay_simulated",
+    retrievedAt: null,
+    sourceUrls: [],
+    logo: null,
+    clayFields: {
+      employees: "60 (simulated)",
+      locations: "12 destinations (simulated)",
+      techStack: ["Booking engine", "Payment links", "Accounting suite"],
+      intentTopics: ["Deposit reconciliation", "Cross-border refunds"],
+      contactRole: "Head of Guest Experience (simulated)",
+      recentEvent: "Added three departures for next season (simulated)",
+    },
+    signals: [
+      {
+        category: "customer",
+        title: "Simulated guests ask where their deposit went",
+        ...clayMeta,
+        evidence:
+          "Synthetic Clay simulation: fictional support themes describe guests asking what a deposit covered and when the balance would be taken. No real guest, booking or payment exists.",
+        whyItMatters:
+          "Inference to test: deposit and balance clarity may determine whether a guest books with confidence. The synthetic record cannot show abandonment or refund volume.",
+        novelty: "Simulated novelty rationale: the split between deposit and balance is a payment-experience question, not a marketing one.",
+        limitations: clayLimits,
+        question: "When a guest pays a deposit, what can they see before the balance is due?",
+        tags: ["clay-simulation", "deposits", "bookings"],
+      },
+      {
+        category: "peer",
+        title: "Simulated operator advertises one-tap balance payments",
+        ...clayMeta,
+        evidence:
+          "Synthetic Clay simulation: a fictional travel peer is described as advertising a single payment link for the remaining balance. The peer and campaign do not exist.",
+        whyItMatters:
+          "Inference to test: a simpler balance payment may shape what travellers expect, but it is not proof of adoption or performance.",
+        novelty: "Simulated novelty rationale: the balance moment is the surface worth comparing, not the booking page.",
+        limitations: clayLimits,
+        question: "Do balance reminders and payment links live in the same system today?",
+        tags: ["clay-simulation", "peer", "balance"],
+      },
+    ],
+  },
+  {
+    key: "market-lane",
+    name: "Market Lane",
+    url: "https://marketlane.example",
+    category: "Ecommerce · curated marketplace (simulated)",
+    summary:
+      "Synthetic Clay record: a fictional marketplace hosting independent sellers, with split payments at checkout and periodic seller payouts.",
+    locations: "Online, 40 sellers (simulated)",
+    channels: ["Marketplace", "Seller portal", "Mobile web"],
+    source: "clay_simulated",
+    retrievedAt: null,
+    sourceUrls: [],
+    logo: null,
+    clayFields: {
+      employees: "30 (simulated)",
+      locations: "Online, 40 sellers (simulated)",
+      techStack: ["Marketplace platform", "Split payments", "Shipping integration"],
+      intentTopics: ["Seller payouts", "Returns handling"],
+      contactRole: "Marketplace Operations Lead (simulated)",
+      recentEvent: "Grew from 22 to 40 sellers (simulated)",
+    },
+    signals: [
+      {
+        category: "customer",
+        title: "Simulated sellers rebuild payout reports every week",
+        ...clayMeta,
+        evidence:
+          "Synthetic Clay simulation: fictional seller messages describe exporting orders and payouts to check a missing sale. No real seller, order or payout exists.",
+        whyItMatters:
+          "Inference to test: if sellers cannot trace a payout, support load and trust may suffer. The synthetic record provides no volumes or dispute rates.",
+        novelty: "Simulated novelty rationale: seller payout transparency is the operational question behind marketplace growth.",
+        limitations: clayLimits,
+        question: "Which payout report do sellers use when they query a missing sale?",
+        tags: ["clay-simulation", "payouts", "sellers"],
+      },
+      {
+        category: "peer",
+        title: "Simulated marketplace promises same-day seller payouts",
+        ...clayMeta,
+        evidence:
+          "Synthetic Clay simulation: a fictional marketplace peer is described as advertising same-day payouts to new sellers. The peer, promise and timing are invented.",
+        whyItMatters:
+          "Inference to test: payout speed may become a seller-acquisition message, though the real cost and risk are unknown.",
+        novelty: "Simulated novelty rationale: payout timing is the differentiator being tested, not catalogue size.",
+        limitations: clayLimits,
+        question: "What would same-day payouts require from your reconciliation process?",
+        tags: ["clay-simulation", "peer", "payout speed"],
+      },
+    ],
+  },
+  {
+    key: "askwell",
+    name: "Askwell",
+    url: "https://askwell.example",
+    category: "AI & search · answer engine (simulated)",
+    summary:
+      "Synthetic Clay record: a fictional AI answer engine sold as team seats with metered API usage on top of the subscription.",
+    locations: "Remote-first (simulated)",
+    channels: ["Web app", "API", "Team billing"],
+    source: "clay_simulated",
+    retrievedAt: null,
+    sourceUrls: [],
+    logo: null,
+    clayFields: {
+      employees: "40 (simulated)",
+      locations: "Remote-first (simulated)",
+      techStack: ["Usage metering", "Subscription billing", "Tax engine"],
+      intentTopics: ["Usage-based billing", "Invoice clarity"],
+      contactRole: "Head of Finance (simulated)",
+      recentEvent: "Introduced usage-based pricing (simulated)",
+    },
+    signals: [
+      {
+        category: "customer",
+        title: "Simulated teams query metered usage on invoices",
+        ...clayMeta,
+        evidence:
+          "Synthetic Clay simulation: fictional billing threads describe customers asking which requests produced a usage line. No real customer, invoice or usage data exists.",
+        whyItMatters:
+          "Inference to test: a usage charge that cannot be traced back to activity may delay payment or trigger disputes. The synthetic record shows no dispute rate.",
+        novelty: "Simulated novelty rationale: traceability of usage is the payment question, not the model or its quality.",
+        limitations: clayLimits,
+        question: "Can a customer trace a line on the invoice back to the request that caused it?",
+        tags: ["clay-simulation", "usage billing", "invoices"],
+      },
+      {
+        category: "peer",
+        title: "Simulated answer engine advertises a flat usage allowance",
+        ...clayMeta,
+        evidence:
+          "Synthetic Clay simulation: a fictional AI search peer is described as marketing a flat monthly allowance instead of metered pricing. The peer and offer are invented.",
+        whyItMatters:
+          "Inference to test: predictable pricing may matter more than unit price for buyers comparing AI tools. This is a hypothesis, not a market finding.",
+        novelty: "Simulated novelty rationale: predictability is the buyer question, not model benchmarks.",
+        limitations: clayLimits,
+        question: "Would a flat allowance make enterprise buyers more comfortable than metered usage?",
+        tags: ["clay-simulation", "peer", "pricing"],
+      },
+    ],
+  },
+  {
+    key: "cadence-ops",
+    name: "Cadence Ops",
+    url: "https://cadenceops.example",
+    category: "SaaS · B2B project operations (simulated)",
+    summary:
+      "Synthetic Clay record: a fictional B2B project operations platform selling annual contracts with seat expansion and procurement review.",
+    locations: "Remote-first, US + EU (simulated)",
+    channels: ["Self-serve", "Sales-assisted", "Annual invoicing"],
+    source: "clay_simulated",
+    retrievedAt: null,
+    sourceUrls: [],
+    logo: null,
+    clayFields: {
+      employees: "210 (simulated)",
+      locations: "Remote-first, US + EU (simulated)",
+      techStack: ["Subscription management", "ERP", "CRM"],
+      intentTopics: ["Procurement-ready invoicing", "Multi-currency"],
+      contactRole: "VP Finance (simulated)",
+      recentEvent: "Won a multi-region enterprise account (simulated)",
+    },
+    signals: [
+      {
+        category: "customer",
+        title: "Simulated buyers need procurement-ready invoices",
+        ...clayMeta,
+        evidence:
+          "Synthetic Clay simulation: fictional procurement threads describe invoices being rejected for missing purchase-order references. No real buyer, invoice or rejection exists.",
+        whyItMatters:
+          "Inference to test: invoice format can gate payment even when the contract is signed. The synthetic record cannot show how often this happens.",
+        novelty: "Simulated novelty rationale: the payment delay sits in procurement paperwork, not in the product.",
+        limitations: clayLimits,
+        question: "What has to be on an invoice before procurement will release payment?",
+        tags: ["clay-simulation", "procurement", "invoicing"],
+      },
+      {
+        category: "peer",
+        title: "Simulated SaaS peer bills in local currency",
+        ...clayMeta,
+        evidence:
+          "Synthetic Clay simulation: a fictional operations peer is described as advertising local-currency billing in every market it sells into. The peer and offer are invented.",
+        whyItMatters:
+          "Inference to test: local-currency invoicing may reduce friction with finance teams, though the operational cost is unknown.",
+        novelty: "Simulated novelty rationale: the currency of the invoice is the question, not the product roadmap.",
+        limitations: clayLimits,
+        question: "Do buyers ask for local-currency billing before or after legal review?",
+        tags: ["clay-simulation", "peer", "currency"],
+      },
+    ],
+  },
 ];
 
 export function prospectScore(prospect: Prospect) {
@@ -360,13 +610,17 @@ export function prospectScore(prospect: Prospect) {
     score += 16;
     reasons.push(`${prospect.channels.length} customer channels in the record`);
   }
-  if (/caf|location|store|pop-up|shop/i.test(prospect.locations)) {
+  if (/caf|location|store|pop-up|shop|destination|hub|remote|online|market/i.test(prospect.locations)) {
     score += 13;
     reasons.push(`Footprint: ${prospect.locations}`);
   }
-  if (/coffee|chocolate|bakery|grocer|swim|food|retail/i.test(prospect.category)) {
+  if (
+    /coffee|chocolate|bakery|grocer|swim|food|retail|fintech|travel|tour|booking|marketplace|ecommerce|commerce|saas|software|search|\bai\b/i.test(
+      prospect.category,
+    )
+  ) {
     score += 10;
-    reasons.push("Consumer retail category fit");
+    reasons.push("Category fits a payments conversation");
   }
   if (
     prospect.signals.some((signal) => signal.category === "customer") &&

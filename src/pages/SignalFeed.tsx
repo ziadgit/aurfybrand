@@ -18,6 +18,7 @@ import { useStudio } from "@/aurfy/store";
 import { buildFeed, findFeedMerchant, type FeedItem } from "@/aurfy/feed";
 import { ANGLES, CONCEPT_PALETTES } from "@/aurfy/content";
 import type { ConceptLayoutId } from "@/aurfy/types";
+import { verticalOf } from "@/aurfy/verticals";
 import { formatDate, hostOf, merchantSourceMeta } from "@/aurfy/utils";
 import { cn } from "@/lib/utils";
 import { BrandMark } from "@/components/aurfy/brand";
@@ -57,15 +58,29 @@ function layoutFor(item: Pick<FeedItem, "palette" | "brand">): ConceptLayoutId {
 
 function makeInitial(pool: FeedItem[]): StreamEntry[] {
   const start = Date.now();
-  const distinct: FeedItem[] = [];
+  const chosen: FeedItem[] = [];
   const seenBrands = new Set<string>();
+  const seenVerticals = new Set<string>();
+
+  // Prefer one brand per vertical so the first screen shows the breadth of
+  // merchants, not three coffee brands in a row.
   for (const item of pool) {
-    if (seenBrands.has(item.brand)) continue;
+    const vertical = verticalOf(item.category).toLowerCase();
+    if (seenBrands.has(item.brand) || seenVerticals.has(vertical)) continue;
     seenBrands.add(item.brand);
-    distinct.push(item);
-    if (distinct.length >= 6) break;
+    seenVerticals.add(vertical);
+    chosen.push(item);
+    if (chosen.length >= 7) break;
   }
-  const chosen = distinct.length >= 6 ? distinct : pool.slice(0, 6);
+  if (chosen.length < 7) {
+    for (const item of pool) {
+      if (seenBrands.has(item.brand)) continue;
+      seenBrands.add(item.brand);
+      chosen.push(item);
+      if (chosen.length >= 7) break;
+    }
+  }
+
   return chosen.map((item, index) => ({
     key: `${item.id}_init_${index}`,
     item,
@@ -76,8 +91,10 @@ function makeInitial(pool: FeedItem[]): StreamEntry[] {
 
 function pickNext(pool: FeedItem[], cursor: number, visible: StreamEntry[]) {
   const visibleBrands = new Set(visible.map((entry) => entry.item.brand));
+  const visibleVerticals = new Set(visible.map((entry) => verticalOf(entry.item.category).toLowerCase()));
   const unseen = pool.filter((item) => !visibleBrands.has(item.brand));
-  const candidates = unseen.length > 0 ? unseen : pool;
+  const unseenVerticals = unseen.filter((item) => !visibleVerticals.has(verticalOf(item.category).toLowerCase()));
+  const candidates = unseenVerticals.length > 0 ? unseenVerticals : unseen.length > 0 ? unseen : pool;
   const recentBrands = new Set(visible.slice(-4).map((entry) => entry.item.brand));
   for (let offset = 0; offset < candidates.length; offset += 1) {
     const candidate = candidates[(cursor + offset) % candidates.length];
@@ -184,7 +201,7 @@ export default function SignalFeed() {
   const [now, setNow] = useState(Date.now());
   const [stream, setStream] = useState(() => {
     const pool = buildFeed(state);
-    return { pool, visible: makeInitial(pool), cursor: Math.min(6, pool.length) };
+    return { pool, visible: makeInitial(pool), cursor: Math.min(7, pool.length) };
   });
 
   useEffect(() => {
@@ -525,6 +542,8 @@ export default function SignalFeed() {
                         <span className="h-1 w-1 rounded-full" style={{ background: sourceDot(item.source) }} aria-hidden="true" />
                         {item.sourceLabel}
                       </span>
+                      <span aria-hidden="true">·</span>
+                      <span className="truncate">{verticalOf(item.category)}</span>
                     </div>
 
                     <button

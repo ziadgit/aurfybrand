@@ -217,9 +217,9 @@ export default function Prospects() {
             <ArrowRight className="h-3.5 w-3.5 transition group-open:rotate-90" aria-hidden="true" />
           </summary>
           <p className="mt-1.5 text-[10.5px] leading-relaxed text-muted-foreground">
-            Each record earns points for three or more customer channels, a multi-location or pop-up footprint, a consumer retail
-            category, both customer and peer signal lenses, and publicly sourced signals. A synthetic Clay record is flagged in the
-            result. Scores are rule-based and deliberately not presented as propensity or intent predictions.
+            Each record earns points for three or more customer channels, a multi-location or multi-market footprint, a category
+            that fits a payments conversation, both customer and peer signal lenses, and publicly sourced signals. A synthetic Clay
+            record is flagged in the result. Scores are rule-based and deliberately not presented as propensity or intent predictions.
           </p>
         </details>
       </section>

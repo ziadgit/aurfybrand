@@ -10,6 +10,8 @@ import {
   freshSignals,
 } from "./demo";
 import { templateConcept } from "./draft";
+import { verticalHeadline, verticalId, verticalSubhead } from "./verticals";
+import { clampText } from "./utils";
 import type {
   AngleId,
   Brief,
@@ -617,10 +619,16 @@ export function StudioProvider({ children }: { children: ReactNode }) {
           positioning.capabilities[0];
         const copy = templateConcept(merchant, undefined, capability, input.angle);
         const existingConcept = current.concepts[merchantId] ?? emptyConcept(merchant.name);
+        const displayName = existingConcept.merchantDisplayName || merchant.name;
+        const isRetail = verticalId(merchant.category) === "retail";
+        const subhead = isRetail
+          ? copy.subhead
+          : clampText(`${displayName} × Aurfy — ${verticalSubhead(merchant.category)}`, 210);
+        const headline = isRetail ? copy.headline : verticalHeadline(merchant.category, input.angle);
         const concept: ConceptDraft = {
           ...existingConcept,
-          headline: copy.headline,
-          subhead: copy.subhead,
+          headline,
+          subhead,
           palette: input.palette,
           layout: input.layout,
           displayFont: input.fontId,
