@@ -84,6 +84,9 @@ export type ConceptDraft = {
   imageUrl?: string | null;
   imagePrompt?: string | null;
   imageGeneratedAt?: string | null;
+  /** Scene type the backend chose for the image, and how many times it was generated. */
+  imageScene?: string | null;
+  imageVariant?: number;
   /** Per-concept art direction. Optional for older locally stored drafts. */
   layout?: ConceptLayoutId;
   displayFont?: ConceptFontId;
