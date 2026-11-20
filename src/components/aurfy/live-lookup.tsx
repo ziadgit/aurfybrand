@@ -24,6 +24,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Pill } from "./ui-bits";
+import { nameFromUrl, suggestMerchantName } from "@/aurfy/merchant-name";
 
 const normalizeUrl = (value: string) => {
   const trimmed = value.trim();
@@ -31,15 +32,8 @@ const normalizeUrl = (value: string) => {
   return /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
 };
 
-const suggestName = (data: LivePageData) => {
-  const base = data.page.title.replace(/\s+[|–-]\s+.*$/, "").trim();
-  if (base.length >= 2) return base.slice(0, 80);
-  try {
-    return new URL(data.page.url).hostname.replace(/^www\./, "");
-  } catch {
-    return "";
-  }
-};
+const suggestName = (data: LivePageData) =>
+  suggestMerchantName({ title: data.page.title, url: data.page.url, siteName: data.page.siteName });
 
 export function LiveLookup() {
   const { state, addSourcedMerchant, addSignalsToMerchant, setActiveMerchant } = useStudio();
@@ -66,7 +60,7 @@ export function LiveLookup() {
     }
   });
   const signals = [...(page?.signals ?? []), ...(news?.signals ?? [])];
-  const canAdd = Boolean(url.trim()) && signals.length > 0 && Boolean(name.trim() || page?.page.title);
+  const canAdd = Boolean(url.trim()) && signals.length > 0 && Boolean(name.trim() || (page && suggestName(page)));
 
   const fetchPage = async () => {
     if (!url.trim()) {
@@ -87,7 +81,7 @@ export function LiveLookup() {
   };
 
   const fetchNews = async () => {
-    const query = name.trim() || page?.page.title || (() => {
+    const query = name.trim() || (page ? suggestName(page) : "") || (() => {
       try {
         return new URL(normalized).hostname.replace(/^www\./, "");
       } catch {
@@ -121,7 +115,7 @@ export function LiveLookup() {
       setError("That URL is not valid.");
       return;
     }
-    const finalName = (name.trim() || page?.page.title || new URL(finalUrl).hostname.replace(/^www\./, "")).slice(0, 100);
+    const finalName = (name.trim() || (page ? suggestName(page) : "") || nameFromUrl(finalUrl)).slice(0, 100);
     const signalsList = signals;
     const liveCount = signalsList.filter((signal) => signal.provenance === "news").length;
     const notes = [

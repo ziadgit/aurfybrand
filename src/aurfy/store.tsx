@@ -1,4 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { repairStoredName } from "./merchant-name";
 import {
   createDemoWorkspace,
   defaultCapabilities,
@@ -199,6 +200,23 @@ function backfillDemoExamples(stored: WorkspaceState): WorkspaceState {
   return changed ? { ...stored, concepts, positioning, signalsByMerchant, updatedAt: new Date().toISOString() } : stored;
 }
 
+/**
+ * Earlier builds named live-lookup merchants after the page <title>, which gave
+ * names like "Home" or "Soylent Let us take a few things off your plate.".
+ * Repair only those obvious cases; names a user typed are left alone.
+ */
+function repairMerchantNames(stored: WorkspaceState): WorkspaceState {
+  let changed = false;
+  const merchants = stored.merchants.map((merchant) => {
+    if (merchant.isDemo) return merchant;
+    const repaired = repairStoredName(merchant.name, merchant.url);
+    if (repaired === merchant.name) return merchant;
+    changed = true;
+    return { ...merchant, name: repaired };
+  });
+  return changed ? { ...stored, merchants } : stored;
+}
+
 function loadWorkspace(): WorkspaceState {
   if (typeof window === "undefined") return createDemoWorkspace();
   try {
@@ -209,7 +227,7 @@ function loadWorkspace(): WorkspaceState {
     if (!parsed.merchants.some((merchant) => merchant.id === parsed.activeMerchantId)) {
       parsed.activeMerchantId = parsed.merchants[0].id;
     }
-    return backfillDemoExamples(parsed);
+    return backfillDemoExamples(repairMerchantNames(parsed));
   } catch {
     return createDemoWorkspace();
   }
