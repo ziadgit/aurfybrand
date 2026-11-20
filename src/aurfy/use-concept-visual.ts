@@ -7,10 +7,16 @@ export type ConceptVisualInput = {
   category: string;
   angle: string;
   palette: string;
+  /** Observed merchant details (signal evidence, notes) so the scene is specific. */
+  brandDetails?: string;
+  /** Approximate brand colour from the uploaded logo. */
+  accentHex?: string;
+  /** Increments on each regenerate so the backend picks a different scene. */
+  variant?: number;
 };
 
 export type VisualResult =
-  | { ok: true; url: string; prompt: string }
+  | { ok: true; url: string; prompt: string; scene: string | null }
   | { ok: false; reason: string };
 
 export type VisualPhase = "idle" | "submitting" | "polling" | "error";
@@ -81,7 +87,7 @@ export function useConceptVisual() {
         return { ok: false, reason };
       }
 
-      const submitted = submit.data as { success?: boolean; task_id?: string; prompt?: string; message?: string } | null;
+      const submitted = submit.data as { success?: boolean; task_id?: string; prompt?: string; scene?: string; message?: string } | null;
       if (!submitted?.success || !submitted.task_id) {
         const reason = submitted?.message || "The image service could not start this generation.";
         setPhase("error");
@@ -131,7 +137,7 @@ export function useConceptVisual() {
           }
           setPhase("idle");
           setError(null);
-          return { ok: true, url, prompt: submitted.prompt ?? "" };
+          return { ok: true, url, prompt: submitted.prompt ?? "", scene: submitted.scene ?? null };
         }
       }
 

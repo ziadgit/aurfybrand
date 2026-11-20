@@ -25,6 +25,7 @@ import type { ConceptLayoutId } from "@/aurfy/types";
 import { templateConcept } from "@/aurfy/draft";
 import { useOnline } from "@/aurfy/use-online";
 import { useConceptVisual } from "@/aurfy/use-concept-visual";
+import { logoAccentHex } from "@/aurfy/logo-colour";
 import { fetchLivePage } from "@/aurfy/live-research";
 import { PROVENANCE_DETAIL, PROVENANCE_LABEL, formatDateTime, initials, resizeImageFile } from "@/aurfy/utils";
 import { cn } from "@/lib/utils";
@@ -168,6 +169,15 @@ export default function Concept() {
       toast.error("Add a headline first", { description: "The visual is built from the concept, so it needs a short headline." });
       return;
     }
+    const variant = concept.imageUrl ? (concept.imageVariant ?? 0) + 1 : concept.imageVariant ?? 0;
+    const detailSignals = signal ? [signal, ...selectedSignals.filter((item) => item.id !== signal.id)] : selectedSignals;
+    const brandDetails = [
+      ...detailSignals.slice(0, 2).map((item) => `${item.title}. ${item.evidence}`),
+      merchant.notes,
+    ]
+      .filter(Boolean)
+      .join(" ")
+      .slice(0, 600);
     const result = await visual.generate({
       headline: concept.headline,
       subhead: concept.subhead,
@@ -175,6 +185,9 @@ export default function Concept() {
       category: merchant.category,
       angle: angle?.label ?? "",
       palette: concept.palette,
+      brandDetails,
+      accentHex: (await logoAccentHex(concept.logoDataUrl)) ?? undefined,
+      variant,
     });
     if (!result.ok) {
       toast.error("Visual not generated", { description: result.reason });
@@ -184,9 +197,11 @@ export default function Concept() {
       imageUrl: result.url,
       imagePrompt: result.prompt,
       imageGeneratedAt: new Date().toISOString(),
+      imageScene: result.scene,
+      imageVariant: variant,
     });
     toast.success("Illustrative visual generated", {
-      description: "Seedream 5 artwork. Labeled illustrative; no logo, readable text or partnership is implied.",
+      description: `${result.scene ? `Scene: ${result.scene}. ` : ""}Seedream 5 artwork. Labeled illustrative; no logo, readable text or partnership is implied.`,
     });
   };
 
