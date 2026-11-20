@@ -8,6 +8,7 @@ import {
   Info,
   Menu,
   MonitorSmartphone,
+  Megaphone,
   Radar,
   RotateCcw,
   Smartphone,
@@ -253,6 +254,7 @@ export function AppShell() {
   const step = stepForPath(pathname);
   const isMore = pathname === "/more";
   const isProspects = pathname === "/prospects";
+  const isSocial = pathname === "/social";
   const stage = STAGES.find((item) => item.id === pipeline.stage);
   const merchantSource = merchantSourceMeta(merchant);
 
@@ -262,14 +264,16 @@ export function AppShell() {
   }, [pathname]);
 
   useEffect(() => {
-    document.title = isProspects
+    document.title = isSocial
+      ? "Social · Aurfy Signal Studio"
+      : isProspects
       ? "Prospect engine · Aurfy Signal Studio"
       : isMore
         ? "More · Aurfy Signal Studio"
         : step
           ? `${step.label} · Aurfy Signal Studio`
           : "Aurfy Signal Studio";
-  }, [step, isMore, isProspects]);
+  }, [step, isMore, isProspects, isSocial]);
 
   return (
     <div className="aurfy-shell min-h-[100dvh]">
@@ -320,6 +324,18 @@ export function AppShell() {
           >
             <Radar className="h-4 w-4" aria-hidden="true" />
             Prospect engine
+          </NavLink>
+          <NavLink
+            to="/social"
+            className={({ isActive }) =>
+              cn(
+                "mt-1 flex min-h-10 items-center gap-2 rounded-xl px-2.5 text-[12px] font-semibold transition",
+                isActive ? "bg-primary-soft text-primary" : "text-muted-foreground hover:bg-secondary hover:text-foreground",
+              )
+            }
+          >
+            <Megaphone className="h-4 w-4" aria-hidden="true" />
+            Social · LinkedIn & X
           </NavLink>
 
           <nav className="mt-2 min-h-0 flex-1 overflow-y-auto" aria-label="Workflow steps">
@@ -376,7 +392,7 @@ export function AppShell() {
                     </SheetTitle>
                   </SheetHeader>
                   <div className="mt-4 space-y-4 pb-8">
-                    <div className="grid grid-cols-3 gap-2">
+                    <div className="grid grid-cols-4 gap-2">
                       <NavLink
                         to="/more"
                         end
@@ -393,6 +409,14 @@ export function AppShell() {
                       >
                         <Radar className="h-4 w-4" aria-hidden="true" />
                         Prospects
+                      </NavLink>
+                      <NavLink
+                        to="/social"
+                        onClick={() => setMenuOpen(false)}
+                        className="flex min-h-12 flex-col items-center justify-center gap-1 rounded-xl border border-border bg-card px-2 text-[10px] font-semibold text-foreground"
+                      >
+                        <Megaphone className="h-4 w-4" aria-hidden="true" />
+                        Social
                       </NavLink>
                       <NavLink
                         to="/deck"
@@ -431,11 +455,11 @@ export function AppShell() {
           <div className="sticky top-0 z-30 hidden border-b border-border/60 bg-background/80 backdrop-blur lg:block">
             <div className="mx-auto flex h-14 max-w-[1180px] items-center gap-3 px-8">
               <span className="font-mono-label text-[10px] text-muted-foreground">
-                {isProspects ? "Public snapshot + Clay simulation" : isMore ? "Learn more" : step ? `Step ${step.step} of 7` : "Studio overview"}
+                {isSocial ? "Audience growth" : isProspects ? "Public snapshot + Clay simulation" : isMore ? "Learn more" : step ? `Step ${step.step} of 7` : "Studio overview"}
               </span>
               <span className="h-3 w-px bg-border" aria-hidden="true" />
               <span className="text-[13px] font-semibold text-foreground">
-                {isProspects ? "Prospect engine" : isMore ? "More" : step?.label ?? "Signal Studio"}
+                {isSocial ? "Social · LinkedIn & X" : isProspects ? "Prospect engine" : isMore ? "More" : step?.label ?? "Signal Studio"}
               </span>
               <div className="ml-auto flex items-center gap-2">
                 <span

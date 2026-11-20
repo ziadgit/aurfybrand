@@ -10,6 +10,7 @@ import Concept from "./pages/Concept";
 import Outreach from "./pages/Outreach";
 import Pipeline from "./pages/Pipeline";
 import Prospects from "./pages/Prospects";
+import Social from "./pages/Social";
 import NotFound from "./pages/NotFound";
 
 export const routers = [
@@ -35,6 +36,7 @@ export const routers = [
       { path: "outreach", name: "outreach", element: <Outreach /> },
       { path: "pipeline", name: "pipeline", element: <Pipeline /> },
       { path: "prospects", name: "prospects", element: <Prospects /> },
+      { path: "social", name: "social", element: <Social /> },
     ],
   },
   /* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */
