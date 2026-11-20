@@ -5,6 +5,8 @@ export type LiveSignalSeed = Omit<Signal, "id" | "status" | "addedAt">;
 export type LivePage = {
   url: string;
   title: string;
+  /** Declared site name (og:site_name / JSON-LD). Optional: older deployments omit it. */
+  siteName?: string | null;
   description: string;
   sourceDate: string | null;
   headings: string[];

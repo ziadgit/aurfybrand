@@ -100,6 +100,54 @@ function extractJsonLd(html: string): Record<string, unknown>[] {
   return results;
 }
 
+const GENERIC_NAMES = /^(home|homepage|home page|welcome|index|main|official (web)?site|website|site|shop|store|online (store|shop)|untitled|page)$/i;
+
+function brandLabel(hostname: string): string {
+  const parts = hostname.toLowerCase().replace(/^www\d*\./, "").split(".");
+  if (parts.length <= 1) return parts[0] ?? "";
+  const second = parts[parts.length - 2];
+  return parts.length >= 3 && /^(co|com|net|org|gov|ac|edu)$/.test(second) ? parts[parts.length - 3] : second;
+}
+
+/**
+ * The company name, not the page title. Titles are often "Home" or carry a
+ * tagline, so prefer og:site_name / JSON-LD, then a title segment matching the
+ * domain, then a name built from the domain.
+ */
+function extractSiteName(
+  meta: Record<string, string>,
+  jsonLd: Record<string, unknown>[],
+  title: string,
+  hostname: string,
+): string {
+  const usable = (value: unknown): value is string =>
+    typeof value === "string" && value.trim().length >= 2 && value.trim().length <= 60 && !GENERIC_NAMES.test(value.trim());
+  if (usable(meta["og:site_name"])) return meta["og:site_name"].trim();
+  if (usable(meta["application-name"])) return meta["application-name"].trim();
+  for (const entry of jsonLd) {
+    const type = String(entry["@type"] ?? "");
+    if (/Organization|Store|Restaurant|LocalBusiness|WebSite|Brand/i.test(type) && usable(entry.name)) {
+      return String(entry.name).trim();
+    }
+  }
+  const brand = brandLabel(hostname);
+  const squash = (value: string) => value.toLowerCase().replace(/[^a-z0-9]/g, "");
+  const segments = title
+    .split(/\s+[|\u2013\u2014\-\u00b7\u2022:\u00bb]\s+|\s*[|\u2013\u2014\u00b7\u2022\u00bb]\s*|:\s+/)
+    .map((segment) => segment.trim().replace(/[.!]+$/, ""))
+    .filter((segment) => segment && !GENERIC_NAMES.test(segment));
+  const match = segments.find((segment) => {
+    const seg = squash(segment);
+    return seg === brand || (seg.length >= 3 && brand.includes(seg));
+  });
+  if (match) return match;
+  return brand
+    .split("-")
+    .filter(Boolean)
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(" ") || hostname;
+}
+
 function extractLinks(html: string, baseUrl: string): { url: string; label: string }[] {
   const links: { url: string; label: string }[] = [];
   const seen = new Set<string>();
@@ -256,6 +304,7 @@ Deno.serve(async (req) => {
       .filter(Boolean)
       .slice(0, 4);
     const jsonLd = extractJsonLd(html);
+    const siteName = extractSiteName(meta, jsonLd, title, finalUrl.hostname);
     const sourceDate = firstDate(meta, jsonLd);
     const logo = extractLogo(html, finalUrl.href, meta, jsonLd);
     const links = extractLinks(html, finalUrl.href);
@@ -288,7 +337,7 @@ Deno.serve(async (req) => {
       {
         ...base,
         category: "customer" as const,
-        title: `Live page snapshot: ${title}`,
+        title: `Live page snapshot: ${siteName}`,
         evidence: `Fetched ${finalUrl.href} on ${new Date(retrievedAt).toLocaleDateString("en-GB")}. Page title: "${title}". Description: ${
           description ? `"${description}"` : "not provided."
         }${headings.length ? ` Main headings: ${headings.map((heading) => `"${heading}"`).join("; ")}.` : ""} Visible text begins: "${text.slice(0, 460)}"`,
@@ -349,6 +398,7 @@ Deno.serve(async (req) => {
       page: {
         url: finalUrl.href,
         title,
+        siteName,
         description,
         sourceDate,
         headings,
